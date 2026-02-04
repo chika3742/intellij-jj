@@ -5,8 +5,10 @@ import com.intellij.openapi.vcs.VcsRootChecker
 import java.io.File
 
 class JujutsuVcsRootChecker : VcsRootChecker() {
-    @Deprecated("Deprecated in VcsRootChecker")
+    @Deprecated("Deprecated in VcsRootChecker base class")
     override fun isRoot(path: String): Boolean {
+        // This method is deprecated in the base class but is still the primary way
+        // to implement VCS root detection in VcsRootChecker implementations.
         // Check for the existence of a .jj directory
         val jjDir = File(path, ".jj")
         return jjDir.exists() && jjDir.isDirectory
@@ -18,7 +20,7 @@ class JujutsuVcsRootChecker : VcsRootChecker() {
     }
 
     override fun isVcsDir(dirName: String): Boolean {
-        // Check if the directory name is .jj
-        return ".jj".equals(dirName, ignoreCase = true)
+        // Check if the directory name is .jj (case-sensitive)
+        return dirName == ".jj"
     }
 }

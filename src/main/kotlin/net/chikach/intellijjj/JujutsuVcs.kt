@@ -56,19 +56,24 @@ class JujutsuVcs(project: Project) : AbstractVcs(project, VCS_NAME) {
         const val VCS_NAME = "Jujutsu"
         const val VCS_KEY = "Jujutsu"
         
-        private val vcsKey by lazy {
-            // AbstractVcs creates a VcsKey from the name passed to constructor
-            val method = AbstractVcs::class.java.getDeclaredMethod("getKeyInstanceMethod")
-            method.isAccessible = true
-            val keyMethod = method.invoke(null) as java.lang.reflect.Method
-            keyMethod.invoke(null, VCS_NAME) as VcsKey
+        @JvmStatic
+        private val vcsKey: VcsKey by lazy {
+            // Use reflection to access AbstractVcs.getKeyInstanceMethod()
+            // This is the standard mechanism that AbstractVcs uses internally to create VcsKeys.
+            // While reflection-based, this approach follows the pattern used by the platform itself
+            // and is necessary since getKeyInstanceMethod() is not part of the public API.
+            val keyMethod = AbstractVcs::class.java.getMethod("getKeyInstanceMethod")
+            val method = keyMethod.invoke(null) as java.lang.reflect.Method
+            method.invoke(null, VCS_NAME) as VcsKey
         }
         
+        @JvmStatic
         fun getInstance(project: Project): JujutsuVcs? {
             return ProjectLevelVcsManager.getInstance(project)
                 .findVcsByName(VCS_NAME) as? JujutsuVcs
         }
         
+        @JvmStatic
         fun getKey(): VcsKey = vcsKey
     }
 }
