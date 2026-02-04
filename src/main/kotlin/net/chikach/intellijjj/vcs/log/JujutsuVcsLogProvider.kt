@@ -23,6 +23,9 @@ class JujutsuVcsLogProvider(
     private val commandExecutor = JujutsuCommandExecutor(project)
     
     companion object {
+        // DateTimeFormatter is thread-safe and can be shared across instances.
+        // Jujutsu always outputs timestamps in a consistent format regardless of user locale,
+        // so using Locale.US is safe for parsing the numeric date/time components.
         private val TIMESTAMP_FORMATTER = DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd HH:mm:ss")
             .optionalStart()
@@ -307,7 +310,8 @@ class JujutsuVcsLogProvider(
 
     private fun parseTimestamp(timestampStr: String): Long {
         try {
-            // Jujutsu timestamps are in ISO 8601 format, e.g., "2024-01-15 10:30:00.000 +00:00"
+            // Jujutsu timestamps are in the format "2024-01-15 10:30:00.000 +00:00"
+            // (space-separated date and time with timezone offset, not standard ISO 8601)
             val cleanedStr = timestampStr.trim()
             return ZonedDateTime.parse(cleanedStr, TIMESTAMP_FORMATTER).toInstant().toEpochMilli()
         } catch (e: Exception) {
@@ -359,11 +363,11 @@ class JujutsuVcsLogProvider(
         }
 
         override fun getBranchLayoutComparator(): Comparator<VcsRef> {
-            return Comparator.comparing { it.name }
+            return Comparator.comparing { ref -> ref.name }
         }
 
         override fun getLabelsOrderComparator(): Comparator<VcsRef> {
-            return Comparator.comparing { it.name }
+            return Comparator.comparing { ref -> ref.name }
         }
 
         override fun groupForBranchFilter(refs: Collection<VcsRef>): List<RefGroup> {
@@ -390,7 +394,7 @@ class JujutsuVcsLogProvider(
         };
         
         companion object {
-            // Light blue color for bookmark refs
+            // Light blue color (R=117, G=170, B=219) for bookmark refs to match Git branch colors
             private val BOOKMARK_COLOR = java.awt.Color(0x75, 0xAA, 0xDB)
         }
     }
