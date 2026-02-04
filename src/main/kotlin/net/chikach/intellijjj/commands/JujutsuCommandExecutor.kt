@@ -24,11 +24,14 @@ class JujutsuCommandExecutor(private val project: Project) {
         
         // Check if we're on EDT
         return if (ApplicationManager.getApplication().isDispatchThread) {
-            // Use runProcessWithProgressIndicator which is EDT-safe
+            // Use runProcessWithProgressIndicator which is EDT-safe and handles cancellation
+            // This method is specifically designed for VCS operations that need to run on EDT
             val indicator = ProgressManager.getInstance().progressIndicator ?: EmptyProgressIndicator()
+            // Note: runProcessWithProgressIndicator respects the progress indicator's cancellation
+            // and provides built-in timeout/cancellation support through the indicator
             handler.runProcessWithProgressIndicator(indicator)
         } else {
-            // Already on background thread, execute directly
+            // Already on background thread, execute directly with explicit timeout
             handler.runProcess(30000) // 30 second timeout
         }
     }
