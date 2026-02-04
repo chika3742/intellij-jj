@@ -9,7 +9,8 @@ This plugin provides comprehensive support for [Jujutsu](https://github.com/mart
 ### Implemented Features
 
 - **VCS Integration**: Full integration with JetBrains IDE's VCS system
-- **Change Log Viewer**: View your change history with `jj log`
+- **Graph-Based Change Log**: View your commit history with an interactive graph visualization in the VCS Log tool window
+- **Change Log Viewer**: View your change history with `jj log` in a simple dialog
 - **Create New Changes**: Create new changes with `jj new`
 - **Edit Changes**: Switch to and edit different changes with `jj edit`
 - **Split Changes**: Split a change into multiple changes with `jj split`
@@ -23,6 +24,7 @@ The plugin is structured as follows:
 ### Core Components
 
 - **JujutsuVcs**: Main VCS integration class that extends IntelliJ's AbstractVcs
+- **JujutsuVcsLogProvider**: Provides graph-based changelog visualization in the VCS Log tool window
 - **JujutsuCommandExecutor**: Executes jj CLI commands
 - **JujutsuChangeProvider**: Provides change detection for the VCS
 - **JujutsuConfigurableProvider**: Configuration provider for plugin settings
@@ -68,11 +70,12 @@ All user-facing actions are located in the `actions` package:
 
 ### Available Actions
 
+- **VCS Log**: Open the graph-based changelog viewer (View → Tool Windows → VCS Log or Alt+9)
 - **New Change**: Create a new change (optionally with a description)
 - **Edit Change**: Switch to a different change by its ID
 - **Split Change**: Split the current change into multiple changes
 - **Squash Change**: Squash the current change into its parent
-- **Show Log**: View the change history
+- **Show Log**: View the change history in a simple text dialog
 - **Create Bookmark**: Create a new bookmark at the current change
 - **List Bookmarks**: View all bookmarks
 
@@ -122,7 +125,9 @@ src/main/kotlin/net/chika3742/intellijjj/
 ├── commands/
 │   └── JujutsuCommandExecutor.kt         # CLI command executor
 ├── vcs/
-│   └── JujutsuChangeProvider.kt          # Change detection
+│   ├── JujutsuChangeProvider.kt          # Change detection
+│   └── log/
+│       └── JujutsuVcsLogProvider.kt      # Graph-based log provider
 └── actions/
     ├── JujutsuAction.kt                  # Base action class
     ├── JujutsuNewAction.kt               # New change action
