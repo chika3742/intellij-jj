@@ -26,6 +26,8 @@
              administrativeAreaName=".jj"/>
         
         <vcsConfigurableProvider implementation="net.chikach.intellijjj.JujutsuConfigurableProvider"/>
+        
+        <logProvider implementation="net.chikach.intellijjj.vcs.log.JujutsuVcsLogProvider"/>
     </extensions>
 
     <actions>

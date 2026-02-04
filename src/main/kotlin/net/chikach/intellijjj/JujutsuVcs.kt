@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.AbstractVcs
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.VcsException
+import com.intellij.openapi.vcs.VcsKey
 import com.intellij.openapi.vcs.changes.ChangeProvider
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.vcs.diff.DiffProvider
@@ -61,6 +62,9 @@ class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
     companion object {
         const val VCS_NAME = "Jujutsu"
         const val VCS_KEY = "Jujutsu"
+        private val ourKey = createKey(VCS_NAME)
+        
+        fun getKey(): VcsKey = ourKey
         
         fun getInstance(project: Project): JujutsuVcs? {
             return ProjectLevelVcsManager.getInstance(project)

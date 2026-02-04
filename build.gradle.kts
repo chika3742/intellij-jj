@@ -18,6 +18,7 @@ repositories {
 dependencies {
     intellijPlatform {
         intellijIdea("2025.3.2")
+        bundledPlugin("com.intellij.modules.vcs")
     }
 }
 
