@@ -1,8 +1,8 @@
-package net.chika3742.intellijjj.actions
+package net.chikach.intellijjj.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ui.Messages
-import net.chika3742.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.JujutsuVcs
 
 class JujutsuEditAction : JujutsuAction() {
     

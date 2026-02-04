@@ -1,11 +1,11 @@
-package net.chika3742.intellijjj.vcs
+package net.chikach.intellijjj.vcs
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.changes.ChangeProvider
 import com.intellij.openapi.vcs.changes.ChangelistBuilder
 import com.intellij.openapi.vcs.changes.VcsDirtyScope
 import com.intellij.openapi.vcs.VcsException
-import net.chika3742.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.JujutsuVcs
 
 class JujutsuChangeProvider(
     private val project: Project,

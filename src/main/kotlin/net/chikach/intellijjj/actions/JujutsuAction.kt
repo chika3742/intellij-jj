@@ -1,11 +1,11 @@
-package net.chika3742.intellijjj.actions
+package net.chikach.intellijjj.actions
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vcs.VcsException
-import net.chika3742.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.JujutsuVcs
 
 abstract class JujutsuAction : AnAction() {
     

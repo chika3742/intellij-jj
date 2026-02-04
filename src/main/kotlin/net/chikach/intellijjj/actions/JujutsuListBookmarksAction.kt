@@ -1,9 +1,9 @@
-package net.chika3742.intellijjj.actions
+package net.chikach.intellijjj.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBScrollPane
-import net.chika3742.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.JujutsuVcs
 import javax.swing.JComponent
 import javax.swing.JTextArea
 

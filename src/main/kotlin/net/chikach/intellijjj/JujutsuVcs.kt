@@ -1,4 +1,4 @@
-package net.chika3742.intellijjj
+package net.chikach.intellijjj
 
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.Project
@@ -12,8 +12,8 @@ import com.intellij.openapi.vcs.history.VcsHistoryProvider
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment
 import com.intellij.openapi.vcs.update.UpdateEnvironment
 import com.intellij.openapi.vfs.VirtualFile
-import net.chika3742.intellijjj.commands.JujutsuCommandExecutor
-import net.chika3742.intellijjj.vcs.JujutsuChangeProvider
+import net.chikach.intellijjj.commands.JujutsuCommandExecutor
+import net.chikach.intellijjj.vcs.JujutsuChangeProvider
 
 class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
     

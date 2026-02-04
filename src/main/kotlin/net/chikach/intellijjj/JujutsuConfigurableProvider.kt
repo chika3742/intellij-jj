@@ -1,4 +1,4 @@
-package net.chika3742.intellijjj
+package net.chikach.intellijjj
 
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.Project

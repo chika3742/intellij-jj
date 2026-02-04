@@ -1,4 +1,4 @@
-package net.chika3742.intellijjj.commands
+package net.chikach.intellijjj.commands
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
