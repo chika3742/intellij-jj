@@ -15,7 +15,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import net.chika3742.intellijjj.commands.JujutsuCommandExecutor
 import net.chika3742.intellijjj.vcs.JujutsuChangeProvider
 
-class JujutsuVcs(project: Project) : AbstractVcs<Any>(project, "Jujutsu") {
+class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
     
     private val changeProvider = JujutsuChangeProvider(project, this)
     val commandExecutor = JujutsuCommandExecutor(project)
