@@ -42,9 +42,9 @@ All user-facing actions are located in the `actions` package:
 
 ## Requirements
 
-- JetBrains IDE (IntelliJ IDEA, PyCharm, WebStorm, etc.) version 2023.2 or later
+- JetBrains IDE (IntelliJ IDEA, PyCharm, WebStorm, etc.) version 2025.3 or later
 - Jujutsu CLI (`jj`) installed and available in PATH
-- Java 17 or later for building the plugin
+- Java 21 or later for building the plugin
 
 ## Installation
 
