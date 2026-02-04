@@ -22,7 +22,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <vcs name="Jujutsu" vcsKey="Jujutsu" displayName="Jujutsu" 
-             implementation="net.chikach.intellijjj.JujutsuVcs"
+             vcsClass="net.chikach.intellijjj.JujutsuVcs"
              administrativeAreaName=".jj"/>
         
         <vcsConfigurableProvider implementation="net.chikach.intellijjj.JujutsuConfigurableProvider"/>
