@@ -22,6 +22,9 @@ dependencies {
 }
 
 intellijPlatform {
+    buildSearchableOptions = false
+    instrumentCode = false
+    
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "253"

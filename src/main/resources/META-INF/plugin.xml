@@ -1,6 +1,6 @@
 <idea-plugin>
     <id>net.chikach.intellij-jj</id>
-    <name>IntelliJ-JJ</name>
+    <name>Jujutsu</name>
     <vendor url="https://github.com/chika3742">chika3742</vendor>
 
     <description><![CDATA[
