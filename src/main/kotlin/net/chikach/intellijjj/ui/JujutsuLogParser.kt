@@ -5,6 +5,12 @@ package net.chikach.intellijjj.ui
  */
 object JujutsuLogParser {
     
+    // Regex pattern for graph characters used in jj log output
+    private val GRAPH_CHARACTERS_REGEX = Regex("^[│├┬╮╯─┤┴┼|\\s]+")
+    
+    // Set of graph characters that can appear in log output
+    private val GRAPH_CHARACTERS = setOf("@", "○", "o", "│", "├", "┬", "╮", "╯", "─", "┤", "┴", "┼", "|")
+    
     /**
      * Parse jj log output into a list of ChangeInfo objects
      * 
@@ -18,9 +24,9 @@ object JujutsuLogParser {
         val changes = mutableListOf<ChangeInfo>()
         val lines = logOutput.lines()
         
-        var i = 0
-        while (i < lines.size) {
-            val line = lines[i]
+        var lineIndex = 0
+        while (lineIndex < lines.size) {
+            val line = lines[lineIndex]
             
             // Check if line starts with a change indicator
             val isCurrent = line.contains("@")
@@ -34,7 +40,7 @@ object JujutsuLogParser {
                 if (parts.size >= 2) {
                     // Skip graph characters to find actual data
                     var dataIndex = 0
-                    while (dataIndex < parts.size && (parts[dataIndex] in setOf("@", "○", "o", "│", "├", "┬", "╮", "╯", "─", "┤", "┴", "┼", "|"))) {
+                    while (dataIndex < parts.size && (parts[dataIndex] in GRAPH_CHARACTERS)) {
                         dataIndex++
                     }
                     
@@ -59,12 +65,13 @@ object JujutsuLogParser {
                         }
                         
                         // Look for description on the next line
-                        if (i + 1 < lines.size) {
-                            val nextLine = lines[i + 1].trim()
+                        if (lineIndex + 1 < lines.size) {
+                            val nextLine = lines[lineIndex + 1].trim()
                             // Description line usually starts with graph characters followed by text
-                            if (nextLine.isNotEmpty() && !nextLine.contains(Regex("[○@o]\\s+\\w{8}"))) {
+                            // Check if it's not another change line (which would contain change indicators and alphanumeric ID)
+                            if (nextLine.isNotEmpty() && !nextLine.contains(Regex("[○@o]\\s+\\w+"))) {
                                 // Remove graph characters from description
-                                description = nextLine.replace(Regex("^[│├┬╮╯─┤┴┼|\\s]+"), "").trim()
+                                description = nextLine.replace(GRAPH_CHARACTERS_REGEX, "").trim()
                             }
                         }
                         
@@ -79,7 +86,7 @@ object JujutsuLogParser {
                 }
             }
             
-            i++
+            lineIndex++
         }
         
         return changes
