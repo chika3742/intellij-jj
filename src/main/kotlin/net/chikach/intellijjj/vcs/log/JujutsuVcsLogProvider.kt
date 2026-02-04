@@ -32,6 +32,7 @@ class JujutsuVcsLogProvider(
             .toFormatter(Locale.US)
         
         private const val NO_BOOKMARKS_OUTPUT = "(no bookmarks)"
+        private const val INVALID_TIMESTAMP = -1L
     }
 
     override fun readFirstBlock(
@@ -311,7 +312,7 @@ class JujutsuVcsLogProvider(
             return ZonedDateTime.parse(cleanedStr, TIMESTAMP_FORMATTER).toInstant().toEpochMilli()
         } catch (e: Exception) {
             LOG.warn("Failed to parse timestamp: $timestampStr", e)
-            return -1L // Use -1 as sentinel value to indicate parsing failure
+            return INVALID_TIMESTAMP
         }
     }
 
@@ -385,7 +386,12 @@ class JujutsuVcsLogProvider(
     private enum class JujutsuRefType : VcsRefType {
         BOOKMARK {
             override fun isBranch(): Boolean = true
-            override fun getBackgroundColor(): java.awt.Color = java.awt.Color(0x75, 0xAA, 0xDB)
+            override fun getBackgroundColor(): java.awt.Color = BOOKMARK_COLOR
+        };
+        
+        companion object {
+            // Light blue color for bookmark refs
+            private val BOOKMARK_COLOR = java.awt.Color(0x75, 0xAA, 0xDB)
         }
     }
 }
