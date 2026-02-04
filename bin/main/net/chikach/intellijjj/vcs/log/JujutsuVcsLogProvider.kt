@@ -7,7 +7,6 @@ import com.intellij.openapi.vcs.VcsKey
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Consumer
 import com.intellij.vcs.log.*
-import com.intellij.vcs.log.graph.PermanentGraph
 import com.intellij.vcs.log.impl.HashImpl
 import com.intellij.vcs.log.impl.VcsUserImpl
 import net.chikach.intellijjj.JujutsuVcs
@@ -22,7 +21,6 @@ class JujutsuVcsLogProvider(
 
     private val LOG = Logger.getInstance(JujutsuVcsLogProvider::class.java)
     private val commandExecutor = JujutsuCommandExecutor(project)
-    private val vcsObjectsFactory = project.getService(VcsLogObjectsFactory::class.java)
     
     companion object {
         // DateTimeFormatter is thread-safe and can be shared across instances.
@@ -54,7 +52,7 @@ class JujutsuVcsLogProvider(
                 override fun getCommits(): List<VcsCommitMetadata> {
                     return commits.map { it.toVcsCommitMetadata(root) }
                 }
-                override fun getRefs(): MutableSet<JujutsuRef> = mutableSetOf()
+                override fun getRefs(): MutableSet<JujutsuRef> = refs
             }
         } catch (e: Exception) {
             LOG.error("Failed to read first block", e)
@@ -69,13 +67,17 @@ class JujutsuVcsLogProvider(
         try {
             val commits = parseLogOutput(root, -1) // Read all commits
             commits.forEach { commit ->
-                consumer.consume(vcsObjectsFactory.createTimedCommit(commit.hash, commit.parents, commit.commitTime))
+                consumer.consume(object : TimedVcsCommit {
+                    override fun getId(): Hash = commit.hash
+                    override fun getParents(): List<Hash> = commit.parents
+                    override fun getTimestamp(): Long = commit.commitTime
+                })
             }
             
             val refs = readRefs(root)
             
             return object : VcsLogProvider.LogData {
-                override fun getRefs(): MutableSet<JujutsuRef> = mutableSetOf()
+                override fun getRefs(): MutableSet<JujutsuRef> = refs
                 override fun getUsers(): MutableSet<VcsUser> = mutableSetOf()
             }
         } catch (e: Exception) {
@@ -152,10 +154,13 @@ class JujutsuVcsLogProvider(
                 "-r",
                 "bookmarks() & ::${commitHash.asString()}",
                 "-T",
-                "bookmarks ++ \",\"",
-                "--no-graph"
+                "bookmarks"
             )
-            output.trim().lines().toSet()
+            output.lines()
+                .filter { it.isNotBlank() }
+                .flatMap { it.split(",").map { name -> name.trim() } }
+                .filter { it.isNotEmpty() }
+                .toSet()
         } catch (e: Exception) {
             LOG.warn("Failed to get containing branches for ${commitHash.asString()}", e)
             emptyList()
@@ -175,8 +180,7 @@ class JujutsuVcsLogProvider(
                 "-r",
                 "@",
                 "-T",
-                "bookmarks",
-                "--no-graph"
+                "bookmarks"
             )
             val bookmarks = output.trim()
             if (bookmarks.isNotEmpty() && bookmarks != NO_BOOKMARKS_OUTPUT) {
@@ -199,40 +203,6 @@ class JujutsuVcsLogProvider(
         // For now, return an empty disposable
         // In a full implementation, you'd watch for file system changes
         return Disposable { }
-    }
-
-    override fun getCommitsMatchingFilter(
-        root: VirtualFile,
-        filterCollection: VcsLogFilterCollection,
-        graphOptions: PermanentGraph.Options,
-        maxCount: Int
-    ): List<TimedVcsCommit> {
-        if (maxCount == 0) return emptyList()
-        val detailsFilters = filterCollection.detailsFilters
-        val hashFilter = filterCollection.get(VcsLogFilterCollection.HASH_FILTER)
-        val loadLimit = if (filterCollection.isEmpty || maxCount <= 0) maxCount else -1
-        val log = parseLogOutput(root, loadLimit)
-
-        val filtered = log.asSequence().filter { commit ->
-            if (hashFilter != null) {
-                val fullHash = commit.hash.asString()
-                if (hashFilter.hashes.none { fullHash.startsWith(it, ignoreCase = true) }) {
-                    return@filter false
-                }
-            }
-            if (detailsFilters.isNotEmpty()) {
-                val metadata = commit.toVcsCommitMetadata(root)
-                if (detailsFilters.any { !it.matches(metadata) }) {
-                    return@filter false
-                }
-            }
-            true
-        }
-
-        val limited = if (maxCount > 0) filtered.take(maxCount) else filtered
-        return limited.map { commit ->
-            vcsObjectsFactory.createTimedCommit(commit.hash, commit.parents, commit.commitTime)
-        }.toList()
     }
     
     private fun readRefs(root: VirtualFile): MutableSet<JujutsuRef> {

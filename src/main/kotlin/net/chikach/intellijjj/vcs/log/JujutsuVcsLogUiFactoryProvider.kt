@@ -1,0 +1,51 @@
+@file:Suppress("UnstableApiUsage")
+
+package net.chikach.intellijjj.vcs.log
+
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.vcs.log.VcsLogFilterCollection
+import com.intellij.vcs.log.VcsLogProvider
+import com.intellij.vcs.log.data.VcsLogData
+import com.intellij.vcs.log.impl.CustomVcsLogUiFactoryProvider
+import com.intellij.vcs.log.impl.MainVcsLogUiProperties
+import com.intellij.vcs.log.impl.VcsLogManager
+import com.intellij.vcs.log.impl.VcsLogTabsProperties
+import com.intellij.vcs.log.ui.MainVcsLogUi
+import com.intellij.vcs.log.ui.VcsLogColorManager
+import com.intellij.vcs.log.ui.VcsLogUiImpl
+import com.intellij.vcs.log.visible.VisiblePackRefresherImpl
+import net.chikach.intellijjj.JujutsuVcs
+
+class JujutsuVcsLogUiFactoryProvider : CustomVcsLogUiFactoryProvider {
+    override fun isActive(providers: Map<VirtualFile, VcsLogProvider>): Boolean {
+        if (providers.isEmpty()) return false
+        val key = JujutsuVcs.getKey()
+        return providers.values.all { it.supportedVcs == key }
+    }
+
+    override fun createLogUiFactory(
+        logId: String,
+        vcsLogManager: VcsLogManager,
+        filters: VcsLogFilterCollection?
+    ): VcsLogManager.VcsLogUiFactory<out MainVcsLogUi> {
+        return JujutsuLogUiFactory(logId, filters, vcsLogManager.uiProperties, vcsLogManager.colorManager)
+    }
+}
+
+private class JujutsuLogUiFactory(
+    logId: String,
+    filters: VcsLogFilterCollection?,
+    uiProperties: VcsLogTabsProperties,
+    colorManager: VcsLogColorManager
+) : VcsLogManager.BaseVcsLogUiFactory<VcsLogUiImpl>(logId, filters, uiProperties, colorManager) {
+    override fun createVcsLogUiImpl(
+        logId: String,
+        logData: VcsLogData,
+        properties: MainVcsLogUiProperties,
+        colorManager: VcsLogColorManager,
+        refresher: VisiblePackRefresherImpl,
+        filters: VcsLogFilterCollection?
+    ): VcsLogUiImpl {
+        return VcsLogUiImpl(logId, logData, colorManager, properties, refresher, filters)
+    }
+}
