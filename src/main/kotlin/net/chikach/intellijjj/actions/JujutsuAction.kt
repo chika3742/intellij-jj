@@ -21,7 +21,8 @@ abstract class JujutsuAction : AnAction() {
         // Use guessProjectDir instead of deprecated baseDir
         val projectDir = project.guessProjectDir() 
             ?: throw IllegalStateException("Cannot determine project directory")
-        return VcsContextFactory.getInstance().createFilePath(projectDir.path, projectDir.isDirectory)
+        // Use createFilePathOn which directly accepts VirtualFile
+        return VcsContextFactory.getInstance().createFilePathOn(projectDir)
     }
     
     protected fun showError(project: Project, title: String, message: String) {
