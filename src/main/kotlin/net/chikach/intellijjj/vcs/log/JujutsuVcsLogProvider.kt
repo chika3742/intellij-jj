@@ -12,9 +12,7 @@ import com.intellij.vcs.log.impl.VcsUserImpl
 import net.chikach.intellijjj.JujutsuVcs
 import net.chikach.intellijjj.commands.JujutsuCommandExecutor
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
-import java.time.temporal.ChronoField
 import java.util.*
 
 class JujutsuVcsLogProvider(
@@ -23,6 +21,16 @@ class JujutsuVcsLogProvider(
 
     private val LOG = Logger.getInstance(JujutsuVcsLogProvider::class.java)
     private val commandExecutor = JujutsuCommandExecutor(project)
+    
+    companion object {
+        private val TIMESTAMP_FORMATTER = DateTimeFormatterBuilder()
+            .appendPattern("yyyy-MM-dd HH:mm:ss")
+            .optionalStart()
+            .appendPattern(".SSS")
+            .optionalEnd()
+            .appendPattern(" XXX")
+            .toFormatter(Locale.US)
+    }
 
     override fun readFirstBlock(
         root: VirtualFile,
@@ -298,25 +306,10 @@ class JujutsuVcsLogProvider(
         try {
             // Jujutsu timestamps are in ISO 8601 format, e.g., "2024-01-15 10:30:00.000 +00:00"
             val cleanedStr = timestampStr.trim()
-            
-            // Use thread-safe DateTimeFormatter
-            val formatter = DateTimeFormatterBuilder()
-                .appendPattern("yyyy-MM-dd HH:mm:ss")
-                .optionalStart()
-                .appendPattern(".SSS")
-                .optionalEnd()
-                .appendPattern(" XXX")
-                .toFormatter(Locale.US)
-            
-            return try {
-                ZonedDateTime.parse(cleanedStr, formatter).toInstant().toEpochMilli()
-            } catch (e: Exception) {
-                LOG.warn("Failed to parse timestamp: $timestampStr", e)
-                0L // Use 0 as sentinel value for failed parsing
-            }
+            return ZonedDateTime.parse(cleanedStr, TIMESTAMP_FORMATTER).toInstant().toEpochMilli()
         } catch (e: Exception) {
             LOG.warn("Failed to parse timestamp: $timestampStr", e)
-            return 0L
+            return 0L // Use 0 as sentinel value for failed parsing
         }
     }
 
@@ -353,7 +346,10 @@ class JujutsuVcsLogProvider(
 
         override fun deserialize(input: java.io.DataInput): VcsRefType {
             val typeId = input.readInt()
-            return if (typeId == 0) JujutsuRefType.BOOKMARK else JujutsuRefType.BOOKMARK
+            return when (typeId) {
+                0 -> JujutsuRefType.BOOKMARK
+                else -> throw IllegalArgumentException("Unknown ref type id: $typeId")
+            }
         }
 
         override fun getBranchLayoutComparator(): Comparator<VcsRef> {
