@@ -3,6 +3,9 @@ package net.chikach.intellijjj.commands
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.execution.process.ProcessOutput
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.progress.EmptyProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vfs.VirtualFile
@@ -18,7 +21,16 @@ class JujutsuCommandExecutor(private val project: Project) {
         args.forEach { commandLine.addParameter(it) }
         
         val handler = CapturingProcessHandler(commandLine)
-        return handler.runProcess(30000) // 30 second timeout
+        
+        // Check if we're on EDT
+        return if (ApplicationManager.getApplication().isDispatchThread) {
+            // Use runProcessWithProgressIndicator which is EDT-safe
+            val indicator = ProgressManager.getInstance().progressIndicator ?: EmptyProgressIndicator()
+            handler.runProcessWithProgressIndicator(indicator)
+        } else {
+            // Already on background thread, execute directly
+            handler.runProcess(30000) // 30 second timeout
+        }
     }
     
     fun executeAndCheck(workingDir: VirtualFile, vararg args: String): String {
