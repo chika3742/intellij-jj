@@ -26,7 +26,6 @@ The plugin is structured as follows:
 - **JujutsuCommandExecutor**: Executes jj CLI commands
 - **JujutsuChangeProvider**: Provides change detection for the VCS
 - **JujutsuConfigurableProvider**: Configuration provider for plugin settings
-- **JujutsuChangesViewRefresher**: Refreshes the changes view
 
 ### Actions
 
@@ -79,11 +78,29 @@ All user-facing actions are located in the `actions` package:
 
 ## Building
 
+### Prerequisites
+- Java 21 or later
+- Gradle 8.13+ (wrapper included)
+
+### Build Commands
+
 ```bash
+# Build the plugin
 ./gradlew buildPlugin
+
+# Verify plugin configuration
+./gradlew verifyPluginProjectConfiguration
 ```
 
 The plugin will be built in `build/distributions/intellij-jj-*.zip`.
+
+### Build Configuration
+
+The plugin uses the latest IntelliJ Platform development tools:
+- **IntelliJ Platform Gradle Plugin**: 2.11.0
+- **Kotlin**: 2.2.0
+- **Target IntelliJ Version**: 2025.3.2+
+- **Minimum Build Number**: 253 (IntelliJ IDEA 2025.3)
 
 ## Development
 
