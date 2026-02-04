@@ -1,0 +1,54 @@
+<idea-plugin>
+    <id>net.chikach.intellij-jj</id>
+    <name>Jujutsu</name>
+    <vendor url="https://github.com/chika3742">chika3742</vendor>
+
+    <description><![CDATA[
+    Jujutsu VCS integration plugin for JetBrains IDEs.
+    
+    This plugin provides support for Jujutsu (jj), a Git-compatible version control system.
+    
+    Features:
+    - Changes log viewer
+    - Create new changes (jj new)
+    - Edit/navigate between changes (jj edit)
+    - Split changes (jj split)
+    - Squash and merge changes (jj squash, jj merge)
+    - Bookmark management
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.vcs</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <vcs name="Jujutsu" vcsKey="Jujutsu" displayName="Jujutsu" 
+             vcsClass="net.chikach.intellijjj.JujutsuVcs"
+             administrativeAreaName=".jj"/>
+        
+        <vcsConfigurableProvider implementation="net.chikach.intellijjj.JujutsuConfigurableProvider"/>
+    </extensions>
+
+    <actions>
+        <group id="Jujutsu.Menu" text="Jujutsu" popup="true">
+            <add-to-group group-id="VcsGroups" anchor="last"/>
+            
+            <action id="Jujutsu.New" class="net.chikach.intellijjj.actions.JujutsuNewAction"
+                    text="New Change" description="Create a new change"/>
+            <action id="Jujutsu.Edit" class="net.chikach.intellijjj.actions.JujutsuEditAction"
+                    text="Edit Change" description="Edit/switch to a different change"/>
+            <action id="Jujutsu.Split" class="net.chikach.intellijjj.actions.JujutsuSplitAction"
+                    text="Split Change" description="Split the current change"/>
+            <action id="Jujutsu.Squash" class="net.chikach.intellijjj.actions.JujutsuSquashAction"
+                    text="Squash Change" description="Squash changes together"/>
+            <action id="Jujutsu.Log" class="net.chikach.intellijjj.actions.JujutsuLogAction"
+                    text="Show Log" description="Show change log"/>
+            
+            <separator/>
+            
+            <action id="Jujutsu.Bookmark.Create" class="net.chikach.intellijjj.actions.JujutsuCreateBookmarkAction"
+                    text="Create Bookmark" description="Create a new bookmark"/>
+            <action id="Jujutsu.Bookmark.List" class="net.chikach.intellijjj.actions.JujutsuListBookmarksAction"
+                    text="List Bookmarks" description="List all bookmarks"/>
+        </group>
+    </actions>
+</idea-plugin>
