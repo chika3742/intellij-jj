@@ -30,6 +30,8 @@ class JujutsuVcsLogProvider(
             .optionalEnd()
             .appendPattern(" XXX")
             .toFormatter(Locale.US)
+        
+        private const val NO_BOOKMARKS_OUTPUT = "(no bookmarks)"
     }
 
     override fun readFirstBlock(
@@ -175,7 +177,7 @@ class JujutsuVcsLogProvider(
                 "bookmarks"
             )
             val bookmarks = output.trim()
-            if (bookmarks.isNotEmpty() && bookmarks != "(no bookmarks)") {
+            if (bookmarks.isNotEmpty() && bookmarks != NO_BOOKMARKS_OUTPUT) {
                 bookmarks.split(",").firstOrNull()?.trim()
             } else null
         } catch (e: Exception) {
@@ -309,7 +311,7 @@ class JujutsuVcsLogProvider(
             return ZonedDateTime.parse(cleanedStr, TIMESTAMP_FORMATTER).toInstant().toEpochMilli()
         } catch (e: Exception) {
             LOG.warn("Failed to parse timestamp: $timestampStr", e)
-            return 0L // Use 0 as sentinel value for failed parsing
+            return -1L // Use -1 as sentinel value to indicate parsing failure
         }
     }
 
@@ -341,7 +343,10 @@ class JujutsuVcsLogProvider(
     private class JujutsuLogRefManager : VcsLogRefManager {
         override fun serialize(output: java.io.DataOutput, type: VcsRefType) {
             // Serialize the ref type - for now we only support BOOKMARK
-            output.writeInt(if (type == JujutsuRefType.BOOKMARK) 0 else -1)
+            when (type) {
+                JujutsuRefType.BOOKMARK -> output.writeInt(0)
+                else -> throw IllegalArgumentException("Unknown ref type: $type")
+            }
         }
 
         override fun deserialize(input: java.io.DataInput): VcsRefType {
