@@ -16,10 +16,35 @@ This plugin provides comprehensive support for [Jujutsu](https://github.com/mart
 - **Squash Changes**: Squash changes together with `jj squash`
 - **Bookmark Management**: Create and list bookmarks
 
+## Architecture
+
+The plugin is structured as follows:
+
+### Core Components
+
+- **JujutsuVcs**: Main VCS integration class that extends IntelliJ's AbstractVcs
+- **JujutsuCommandExecutor**: Executes jj CLI commands
+- **JujutsuChangeProvider**: Provides change detection for the VCS
+- **JujutsuConfigurableProvider**: Configuration provider for plugin settings
+- **JujutsuChangesViewRefresher**: Refreshes the changes view
+
+### Actions
+
+All user-facing actions are located in the `actions` package:
+
+- **JujutsuNewAction**: Create new changes
+- **JujutsuEditAction**: Edit/switch changes  
+- **JujutsuSplitAction**: Split changes
+- **JujutsuSquashAction**: Squash changes
+- **JujutsuLogAction**: Show change log in a dialog
+- **JujutsuCreateBookmarkAction**: Create bookmarks
+- **JujutsuListBookmarksAction**: List all bookmarks
+
 ## Requirements
 
 - JetBrains IDE (IntelliJ IDEA, PyCharm, WebStorm, etc.) version 2023.2 or later
 - Jujutsu CLI (`jj`) installed and available in PATH
+- Java 17 or later for building the plugin
 
 ## Installation
 
@@ -58,6 +83,8 @@ This plugin provides comprehensive support for [Jujutsu](https://github.com/mart
 ./gradlew buildPlugin
 ```
 
+The plugin will be built in `build/distributions/intellij-jj-*.zip`.
+
 ## Development
 
 ```bash
@@ -68,6 +95,28 @@ This plugin provides comprehensive support for [Jujutsu](https://github.com/mart
 ./gradlew test
 ```
 
+## Project Structure
+
+```
+src/main/kotlin/net/chika3742/intellijjj/
+├── JujutsuVcs.kt                          # Main VCS class
+├── JujutsuConfigurableProvider.kt        # Configuration provider
+├── JujutsuChangesViewRefresher.kt        # Changes view refresher
+├── commands/
+│   └── JujutsuCommandExecutor.kt         # CLI command executor
+├── vcs/
+│   └── JujutsuChangeProvider.kt          # Change detection
+└── actions/
+    ├── JujutsuAction.kt                  # Base action class
+    ├── JujutsuNewAction.kt               # New change action
+    ├── JujutsuEditAction.kt              # Edit change action
+    ├── JujutsuSplitAction.kt             # Split change action
+    ├── JujutsuSquashAction.kt            # Squash change action
+    ├── JujutsuLogAction.kt               # Log viewer action
+    ├── JujutsuCreateBookmarkAction.kt    # Create bookmark action
+    └── JujutsuListBookmarksAction.kt     # List bookmarks action
+```
+
 ## License
 
 See [LICENSE](LICENSE) file for details.
@@ -75,3 +124,10 @@ See [LICENSE](LICENSE) file for details.
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Notes
+
+- The plugin integrates with IntelliJ's VCS system by implementing the AbstractVcs interface
+- Commands are executed using IntelliJ's process execution APIs
+- The plugin automatically detects Jujutsu repositories by looking for `.jj` directories
+- All actions are accessible through the VCS menu when a Jujutsu repository is open
