@@ -5,17 +5,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.AbstractVcs
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.VcsException
+import com.intellij.openapi.vcs.VcsKey
 import com.intellij.openapi.vcs.changes.ChangeProvider
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.vcs.diff.DiffProvider
 import com.intellij.openapi.vcs.history.VcsHistoryProvider
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment
 import com.intellij.openapi.vcs.update.UpdateEnvironment
-import com.intellij.openapi.vfs.VirtualFile
 import net.chikach.intellijjj.commands.JujutsuCommandExecutor
 import net.chikach.intellijjj.vcs.JujutsuChangeProvider
 
-class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
+class JujutsuVcs(project: Project) : AbstractVcs(project, VCS_NAME) {
     
     private val changeProvider = JujutsuChangeProvider(project, this)
     val commandExecutor = JujutsuCommandExecutor(project)
@@ -27,12 +27,6 @@ class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
     }
 
     override fun getChangeProvider(): ChangeProvider = changeProvider
-
-    override fun isVersionedDirectory(dir: VirtualFile?): Boolean {
-        if (dir == null || !dir.isDirectory) return false
-        val jjDir = dir.findChild(".jj")
-        return jjDir != null && jjDir.isDirectory
-    }
 
     override fun getCheckinEnvironment(): CheckinEnvironment? {
         return null // Jujutsu doesn't use traditional checkin
@@ -62,9 +56,19 @@ class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
         const val VCS_NAME = "Jujutsu"
         const val VCS_KEY = "Jujutsu"
         
+        private val vcsKey by lazy {
+            // AbstractVcs creates a VcsKey from the name passed to constructor
+            val method = AbstractVcs::class.java.getDeclaredMethod("getKeyInstanceMethod")
+            method.isAccessible = true
+            val keyMethod = method.invoke(null) as java.lang.reflect.Method
+            keyMethod.invoke(null, VCS_NAME) as VcsKey
+        }
+        
         fun getInstance(project: Project): JujutsuVcs? {
             return ProjectLevelVcsManager.getInstance(project)
                 .findVcsByName(VCS_NAME) as? JujutsuVcs
         }
+        
+        fun getKey(): VcsKey = vcsKey
     }
 }

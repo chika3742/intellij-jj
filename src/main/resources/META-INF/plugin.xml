@@ -25,6 +25,8 @@
              vcsClass="net.chikach.intellijjj.JujutsuVcs"
              administrativeAreaName=".jj"/>
         
+        <vcsRootChecker implementation="net.chikach.intellijjj.JujutsuVcsRootChecker"/>
+        
         <vcsConfigurableProvider implementation="net.chikach.intellijjj.JujutsuConfigurableProvider"/>
     </extensions>
 
