@@ -24,23 +24,35 @@ class ChangeLogTreeCellRenderer : ColoredTreeCellRenderer() {
         
         when (userObject) {
             is ChangeInfo -> {
-                // Display change ID
+                // Display current change indicator
                 if (userObject.isCurrent) {
                     append("@ ", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
+                } else {
+                    append("○ ", SimpleTextAttributes.GRAYED_ATTRIBUTES)
                 }
+                
+                // Display change ID
                 append(userObject.changeId, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
                 
                 // Display description
                 if (userObject.description.isNotEmpty()) {
-                    append(" - ", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+                    append(" ", SimpleTextAttributes.REGULAR_ATTRIBUTES)
                     append(userObject.description, SimpleTextAttributes.REGULAR_ATTRIBUTES)
+                } else {
+                    append(" (empty)", SimpleTextAttributes.GRAYED_ITALIC_ATTRIBUTES)
                 }
                 
                 // Display author if available
                 if (userObject.author != null) {
-                    append(" (", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+                    append(" [", SimpleTextAttributes.GRAYED_ATTRIBUTES)
                     append(userObject.author, SimpleTextAttributes.GRAYED_ATTRIBUTES)
-                    append(")", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+                    append("]", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+                }
+                
+                // Display date if available
+                if (userObject.date != null) {
+                    append(" ", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+                    append(userObject.date, SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES)
                 }
             }
             is String -> {
