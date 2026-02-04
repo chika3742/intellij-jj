@@ -3,8 +3,11 @@ package net.chikach.intellijjj.actions
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.VcsException
+import com.intellij.openapi.vcs.actions.VcsContextFactory
 import net.chikach.intellijjj.JujutsuVcs
 
 abstract class JujutsuAction : AnAction() {
@@ -14,7 +17,12 @@ abstract class JujutsuAction : AnAction() {
         e.presentation.isEnabled = project != null && JujutsuVcs.getInstance(project) != null
     }
     
-    protected fun getProjectRoot(project: Project) = project.baseDir
+    protected fun getProjectRoot(project: Project): FilePath {
+        // Use guessProjectDir instead of deprecated baseDir
+        val projectDir = project.guessProjectDir() 
+            ?: throw IllegalStateException("Cannot determine project directory")
+        return VcsContextFactory.getInstance().createFilePath(projectDir.path, projectDir.isDirectory)
+    }
     
     protected fun showError(project: Project, title: String, message: String) {
         Messages.showErrorDialog(project, message, title)
