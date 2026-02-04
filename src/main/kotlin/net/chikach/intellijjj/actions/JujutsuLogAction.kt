@@ -3,9 +3,13 @@ package net.chikach.intellijjj.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.treeStructure.Tree
 import net.chikach.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.ui.ChangeLogTreeCellRenderer
+import net.chikach.intellijjj.ui.ChangeLogTreeModel
+import net.chikach.intellijjj.ui.JujutsuLogParser
+import java.awt.Dimension
 import javax.swing.JComponent
-import javax.swing.JTextArea
 
 class JujutsuLogAction : JujutsuAction() {
     
@@ -35,12 +39,26 @@ class JujutsuLogAction : JujutsuAction() {
         }
         
         override fun createCenterPanel(): JComponent {
-            val textArea = JTextArea(logContent).apply {
-                isEditable = false
-                rows = 30
-                columns = 80
+            // Parse the log output
+            val changes = JujutsuLogParser.parse(logContent)
+            
+            // Create tree model
+            val treeModel = ChangeLogTreeModel(changes)
+            
+            // Create tree with custom renderer
+            val tree = Tree(treeModel).apply {
+                cellRenderer = ChangeLogTreeCellRenderer()
+                isRootVisible = false
+                showsRootHandles = true
+                preferredSize = Dimension(800, 500)
             }
-            return JBScrollPane(textArea)
+            
+            // Expand all nodes by default
+            for (i in 0 until tree.rowCount) {
+                tree.expandRow(i)
+            }
+            
+            return JBScrollPane(tree)
         }
     }
 }
