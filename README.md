@@ -9,7 +9,10 @@ This plugin provides comprehensive support for [Jujutsu](https://github.com/mart
 ### Implemented Features
 
 - **VCS Integration**: Full integration with JetBrains IDE's VCS system
-- **Change Log Viewer**: View your change history with `jj log`
+- **Change Log Viewer**: View your change history with `jj log` in an intuitive tree list view
+  - Displays change ID, description, author, and date
+  - Highlights current working copy
+  - Formatted like Git log for familiarity
 - **Create New Changes**: Create new changes with `jj new`
 - **Edit Changes**: Switch to and edit different changes with `jj edit`
 - **Split Changes**: Split a change into multiple changes with `jj split`
@@ -123,6 +126,10 @@ src/main/kotlin/net/chika3742/intellijjj/
 │   └── JujutsuCommandExecutor.kt         # CLI command executor
 ├── vcs/
 │   └── JujutsuChangeProvider.kt          # Change detection
+├── ui/
+│   ├── ChangeLogTreeModel.kt             # Tree model for log display
+│   ├── ChangeLogTreeCellRenderer.kt      # Custom tree cell renderer
+│   └── JujutsuLogParser.kt               # Parser for jj log output
 └── actions/
     ├── JujutsuAction.kt                  # Base action class
     ├── JujutsuNewAction.kt               # New change action
