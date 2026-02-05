@@ -13,6 +13,10 @@ import java.util.concurrent.atomic.AtomicReference
 
 class JujutsuCommandExecutor(private val project: Project) {
     
+    companion object {
+        private const val PROCESS_TIMEOUT_MS = 30000 // 30 second timeout
+    }
+    
     fun execute(workingDir: VirtualFile, vararg args: String): ProcessOutput {
         val commandLine = GeneralCommandLine("jj")
             .withWorkDirectory(workingDir.path)
@@ -30,16 +34,16 @@ class JujutsuCommandExecutor(private val project: Project) {
             val commandDescription = if (args.isNotEmpty()) "Running jj ${args[0]}" else "Running jj command"
             ProgressManager.getInstance().runProcessWithProgressSynchronously(
                 {
-                    result.set(handler.runProcess(30000))
+                    result.set(handler.runProcess(PROCESS_TIMEOUT_MS))
                 },
                 commandDescription,
                 true,  // canBeCanceled
                 project
             )
-            result.get() ?: ProcessOutput("", "Process was cancelled or failed to execute", -1, false, false)
+            result.get() ?: ProcessOutput("", "Process was cancelled or failed to execute", 1, false, false)
         } else {
             // Already on background thread, execute directly with explicit timeout
-            handler.runProcess(30000) // 30 second timeout
+            handler.runProcess(PROCESS_TIMEOUT_MS)
         }
     }
     
