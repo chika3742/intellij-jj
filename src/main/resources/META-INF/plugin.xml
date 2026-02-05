@@ -30,6 +30,8 @@
         <logProvider implementation="net.chikach.intellijjj.vcs.log.JujutsuVcsLogProvider"/>
         
         <customVcsLogUiFactoryProvider implementation="net.chikach.intellijjj.vcs.log.JujutsuVcsLogUiFactoryProvider"/>
+
+        <openapi.vcs.ui.commitOptionsDialogExtension implementation="net.chikach.intellijjj.vcs.commit.JujutsuCommitOptionsDialogExtension"/>
     </extensions>
 
     <actions>

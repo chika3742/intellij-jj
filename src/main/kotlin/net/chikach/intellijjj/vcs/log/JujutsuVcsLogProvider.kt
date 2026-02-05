@@ -406,7 +406,7 @@ class JujutsuVcsLogProvider(
 
     private fun parseCommits(output: String, delimiter: String, commitSeparator: String): List<JujutsuCommitData> {
         val commits = mutableListOf<JujutsuCommitData>()
-        val commitStrings = output.trim().split(commitSeparator)
+        val commitStrings = output.split(commitSeparator)
         
         for (commitStr in commitStrings) {
             if (commitStr.isBlank()) continue
@@ -414,7 +414,7 @@ class JujutsuVcsLogProvider(
             try {
                 val parts = commitStr.split(delimiter)
                 if (parts.size < 8) {
-                    LOG.warn("Invalid commit format: expected at least 8 parts, got ${parts.size}")
+                    LOG.warn("Invalid commit format: expected at least 8 parts, got ${parts.size}, $parts", Throwable())
                     continue
                 }
                 
