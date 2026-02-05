@@ -27,15 +27,16 @@ class JujutsuCommandExecutor(private val project: Project) {
             // Use ProgressManager to run the process in a background thread
             // This prevents EDT violations while still providing progress indication
             val result = AtomicReference<ProcessOutput>()
+            val commandDescription = if (args.isNotEmpty()) "Running jj ${args[0]}" else "Running jj command"
             ProgressManager.getInstance().runProcessWithProgressSynchronously(
                 {
                     result.set(handler.runProcess(30000))
                 },
-                "Running jj command",
+                commandDescription,
                 true,  // canBeCanceled
                 project
             )
-            result.get() ?: ProcessOutput().apply { exitCode = -1 }
+            result.get() ?: ProcessOutput("", "Process was cancelled or failed to execute", -1, false, false)
         } else {
             // Already on background thread, execute directly with explicit timeout
             handler.runProcess(30000) // 30 second timeout
