@@ -3,15 +3,21 @@ package net.chikach.intellijjj.vcs.log
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.VcsKey
+import com.intellij.openapi.vcs.changes.Change
+import com.intellij.openapi.vcs.changes.TextRevisionNumber
+import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Consumer
 import com.intellij.vcs.log.*
 import com.intellij.vcs.log.graph.PermanentGraph
 import com.intellij.vcs.log.impl.HashImpl
 import com.intellij.vcs.log.impl.VcsUserImpl
+import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcs
 import net.chikach.intellijjj.commands.JujutsuCommandExecutor
+import java.io.File
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatterBuilder
 import java.util.*
@@ -38,6 +44,8 @@ class JujutsuVcsLogProvider(
         
         private const val NO_BOOKMARKS_OUTPUT = "(no bookmarks)"
         private const val INVALID_TIMESTAMP = -1L
+
+        private fun commitRevset(hash: String): String = "commit_id(${hash.trim()})"
     }
 
     override fun readFirstBlock(
@@ -91,34 +99,32 @@ class JujutsuVcsLogProvider(
         try {
             // Optimize: fetch only the requested commits using revset
             if (hashes.isEmpty()) return
-            
-            val delimiter = "\u001E" // ASCII Record Separator
-            val commitSeparator = "\u001F" // ASCII Unit Separator
-            val template = """
-                commit_id ++ "$delimiter" ++ 
-                change_id ++ "$delimiter" ++ 
-                parents.map(|p| p.commit_id()).join(",") ++ "$delimiter" ++ 
-                author.name() ++ "$delimiter" ++ 
-                author.email() ++ "$delimiter" ++ 
-                author.timestamp() ++ "$delimiter" ++ 
-                description.first_line() ++ "$delimiter" ++ 
-                description ++ "$commitSeparator"
-            """.trimIndent().replace("\n", " ")
-            
-            // Fetch commits using a revset expression
-            val revset = hashes.joinToString(" | ")
-            val output = commandExecutor.executeAndCheck(root, "log", "-r", revset, "-T", template)
-            val commits = parseCommits(output, delimiter, commitSeparator)
-            
-            commits.forEach { consumer.consume(it.toVcsCommitMetadata(root)) }
+            val commits = readCommitsForHashes(root, hashes)
+            commits.forEach { commit -> consumer.consume(commit.toVcsCommitMetadata(root)) }
         } catch (e: Exception) {
             LOG.warn("Failed to read metadata for specific hashes", e)
         }
     }
 
     override fun readFullDetails(root: VirtualFile, hashes: List<String>, consumer: Consumer<in VcsFullCommitDetails>) {
-        // For now, we don't provide full details with file changes
-        // This would require parsing `jj diff` output for each commit
+        if (hashes.isEmpty()) return
+        try {
+            val commits = readCommitsForHashes(root, hashes)
+            hashes.forEach { hash ->
+                val commit = findCommitForHash(commits, hash)
+                    ?: readCommitForHash(root, hash)
+                    ?: createPlaceholderCommit(hash)
+                val changes = try {
+                    readChanges(root, commit)
+                } catch (e: Exception) {
+                    LOG.warn("Failed to read changes for ${commit.hash.asString()}", e)
+                    emptyList()
+                }
+                consumer.consume(JujutsuFullCommitDetails(commit, root, changes))
+            }
+        } catch (e: Exception) {
+            LOG.warn("Failed to read full details for ${hashes.size} commits", e)
+        }
     }
 
     override fun getSupportedVcs(): VcsKey {
@@ -152,7 +158,7 @@ class JujutsuVcsLogProvider(
                 "-r",
                 "bookmarks() & ::${commitHash.asString()}",
                 "-T",
-                "bookmarks ++ \",\"",
+                "bookmarks ++ \"\n\"",
                 "--no-graph"
             )
             output.trim().lines().toSet()
@@ -279,16 +285,7 @@ class JujutsuVcsLogProvider(
         // Use a delimiter that's unlikely to appear in commit messages
         val delimiter = "\u001E" // ASCII Record Separator
         val commitSeparator = "\u001F" // ASCII Unit Separator
-        val template = """
-            commit_id ++ "$delimiter" ++ 
-            change_id ++ "$delimiter" ++ 
-            parents.map(|p| p.commit_id()).join(",") ++ "$delimiter" ++ 
-            author.name() ++ "$delimiter" ++ 
-            author.email() ++ "$delimiter" ++ 
-            author.timestamp() ++ "$delimiter" ++ 
-            description.first_line() ++ "$delimiter" ++ 
-            description ++ "$commitSeparator"
-        """.trimIndent().replace("\n", " ")
+        val template = buildLogTemplate(delimiter, commitSeparator)
 
         val args = mutableListOf("log", "--no-graph", "-T", template)
         if (limit > 0) {
@@ -298,6 +295,113 @@ class JujutsuVcsLogProvider(
         
         val output = commandExecutor.executeAndCheck(root, *args.toTypedArray())
         return parseCommits(output, delimiter, commitSeparator)
+    }
+
+    private fun readCommitsForHashes(root: VirtualFile, hashes: List<String>): List<JujutsuCommitData> {
+        if (hashes.isEmpty()) return emptyList()
+        val delimiter = "\u001E" // ASCII Record Separator
+        val commitSeparator = "\u001F" // ASCII Unit Separator
+        val template = buildLogTemplate(delimiter, commitSeparator)
+
+        val revset = hashes.joinToString(" | ") { commitRevset(it) }
+        return try {
+            val output = commandExecutor.executeAndCheck(root, "log", "--no-graph", "-r", revset, "-T", template)
+            parseCommits(output, delimiter, commitSeparator)
+        } catch (e: Exception) {
+            LOG.warn("Failed to read commits in a single revset call", e)
+            val commits = mutableListOf<JujutsuCommitData>()
+            hashes.forEach { hash ->
+                try {
+                    val output = commandExecutor.executeAndCheck(root, "log", "--no-graph", "-r", commitRevset(hash), "-T", template)
+                    commits.addAll(parseCommits(output, delimiter, commitSeparator))
+                } catch (inner: Exception) {
+                    LOG.warn("Failed to read commit $hash", inner)
+                }
+            }
+            commits
+        }
+    }
+
+    private fun readChanges(root: VirtualFile, commit: JujutsuCommitData): List<Change> {
+        val parentHash = commit.parents.firstOrNull()?.asString()
+        val output = commandExecutor.executeAndCheck(
+            root,
+            "diff",
+            "--summary",
+            "-r",
+            commitRevset(commit.hash.asString())
+        )
+        val changes = mutableListOf<Change>()
+        output.lineSequence().forEach { line ->
+            val entry = parseSummaryLine(line) ?: return@forEach
+            val absolutePath = File(root.path, entry.path).path
+            val filePath = VcsUtil.getFilePath(absolutePath, false)
+            val before = when (entry.type) {
+                JujutsuChangeType.MODIFIED, JujutsuChangeType.DELETED ->
+                    parentHash?.let { JujutsuContentRevision(root, filePath, entry.path, it, commandExecutor) }
+                JujutsuChangeType.ADDED -> null
+            }
+            val after = when (entry.type) {
+                JujutsuChangeType.MODIFIED, JujutsuChangeType.ADDED ->
+                    JujutsuContentRevision(root, filePath, entry.path, commit.hash.asString(), commandExecutor)
+                JujutsuChangeType.DELETED -> null
+            }
+            if (before != null || after != null) {
+                changes.add(Change(before, after))
+            }
+        }
+        return changes
+    }
+
+    private fun readCommitForHash(root: VirtualFile, hash: String): JujutsuCommitData? {
+        val delimiter = "\u001E" // ASCII Record Separator
+        val commitSeparator = "\u001F" // ASCII Unit Separator
+        val template = buildLogTemplate(delimiter, commitSeparator)
+        return try {
+            val output = commandExecutor.executeAndCheck(root, "log", "--no-graph", "-r", commitRevset(hash), "-T", template)
+            parseCommits(output, delimiter, commitSeparator).firstOrNull()
+        } catch (e: Exception) {
+            LOG.warn("Failed to read commit metadata for $hash", e)
+            null
+        }
+    }
+
+    private fun findCommitForHash(commits: List<JujutsuCommitData>, hash: String): JujutsuCommitData? {
+        val normalized = hash.trim()
+        val exact = commits.firstOrNull { it.hash.asString().equals(normalized, ignoreCase = true) }
+        if (exact != null) return exact
+        return commits.firstOrNull {
+            val commitHash = it.hash.asString()
+            commitHash.startsWith(normalized, ignoreCase = true) ||
+                normalized.startsWith(commitHash, ignoreCase = true)
+        }
+    }
+
+    private fun createPlaceholderCommit(hash: String): JujutsuCommitData {
+        return JujutsuCommitData(
+            hash = HashImpl.build(hash),
+            parents = emptyList(),
+            commitTime = INVALID_TIMESTAMP,
+            author = VcsUserImpl("<unknown>", ""),
+            fullMessage = "<details unavailable>",
+            subject = "<details unavailable>",
+            changeId = ""
+        )
+    }
+
+    private fun parseSummaryLine(line: String): JujutsuChangeEntry? {
+        val trimmed = line.trim()
+        if (trimmed.length < 3) return null
+        if (trimmed[1] != ' ') return null
+        val path = trimmed.substring(2).trim()
+        if (path.isEmpty()) return null
+        val type = when (trimmed[0]) {
+            'M' -> JujutsuChangeType.MODIFIED
+            'A' -> JujutsuChangeType.ADDED
+            'D' -> JujutsuChangeType.DELETED
+            else -> return null
+        }
+        return JujutsuChangeEntry(type, path)
     }
 
     private fun parseCommits(output: String, delimiter: String, commitSeparator: String): List<JujutsuCommitData> {
@@ -346,6 +450,19 @@ class JujutsuVcsLogProvider(
         return commits
     }
 
+    private fun buildLogTemplate(delimiter: String, commitSeparator: String): String {
+        return """
+            commit_id.short(64) ++ "$delimiter" ++ 
+            change_id.short(64) ++ "$delimiter" ++ 
+            parents.map(|p| p.commit_id().short(64)).join(",") ++ "$delimiter" ++ 
+            author.name() ++ "$delimiter" ++ 
+            author.email() ++ "$delimiter" ++ 
+            author.timestamp() ++ "$delimiter" ++ 
+            description.first_line() ++ "$delimiter" ++ 
+            description ++ "$commitSeparator"
+        """.trimIndent().replace("\n", " ")
+    }
+
     private fun parseTimestamp(timestampStr: String): Long {
         try {
             // Jujutsu timestamps are in the format "2024-01-15 10:30:00.000 +00:00"
@@ -381,6 +498,61 @@ class JujutsuVcsLogProvider(
                 override fun getAuthorTime(): Long = commitTime
             }
         }
+    }
+
+    private data class JujutsuChangeEntry(
+        val type: JujutsuChangeType,
+        val path: String
+    )
+
+    private enum class JujutsuChangeType {
+        MODIFIED,
+        ADDED,
+        DELETED
+    }
+
+    private class JujutsuContentRevision(
+        private val root: VirtualFile,
+        private val filePath: FilePath,
+        private val relativePath: String,
+        private val revision: String,
+        private val commandExecutor: JujutsuCommandExecutor
+    ) : com.intellij.openapi.vcs.changes.ContentRevision {
+        override fun getContent(): String? {
+            return try {
+                commandExecutor.executeAndCheck(root, "file", "show", "-r", commitRevset(revision), "--", relativePath)
+            } catch (e: Exception) {
+                Logger.getInstance(JujutsuContentRevision::class.java)
+                    .warn("Failed to read content for $relativePath at $revision", e)
+                null
+            }
+        }
+
+        override fun getFile(): FilePath = filePath
+
+        override fun getRevisionNumber(): VcsRevisionNumber {
+            val shortRevision = revision.take(7)
+            return TextRevisionNumber(revision, shortRevision)
+        }
+    }
+
+    private class JujutsuFullCommitDetails(
+        private val commit: JujutsuCommitData,
+        private val root: VirtualFile,
+        private val changes: List<Change>
+    ) : VcsFullCommitDetails {
+        override fun getChanges(): Collection<Change> = changes
+        override fun getChanges(parent: Int): Collection<Change> = changes
+        override fun getId(): Hash = commit.hash
+        override fun getParents(): List<Hash> = commit.parents
+        override fun getCommitTime(): Long = commit.commitTime
+        override fun getTimestamp(): Long = commit.commitTime
+        override fun getRoot(): VirtualFile = root
+        override fun getSubject(): String = commit.subject
+        override fun getAuthor(): VcsUser = commit.author
+        override fun getFullMessage(): String = commit.fullMessage
+        override fun getCommitter(): VcsUser = commit.author
+        override fun getAuthorTime(): Long = commit.commitTime
     }
 
     private class JujutsuLogRefManager : VcsLogRefManager {

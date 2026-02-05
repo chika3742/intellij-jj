@@ -5,7 +5,6 @@ package net.chikach.intellijjj.vcs.log
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcs.log.VcsLogFilterCollection
 import com.intellij.vcs.log.VcsLogProvider
-import com.intellij.vcs.log.data.VcsLogData
 import com.intellij.vcs.log.impl.CustomVcsLogUiFactoryProvider
 import com.intellij.vcs.log.impl.MainVcsLogUiProperties
 import com.intellij.vcs.log.impl.VcsLogManager
@@ -40,12 +39,12 @@ private class JujutsuLogUiFactory(
 ) : VcsLogManager.BaseVcsLogUiFactory<VcsLogUiImpl>(logId, filters, uiProperties, colorManager) {
     override fun createVcsLogUiImpl(
         logId: String,
-        logData: VcsLogData,
+        logData: com.intellij.vcs.log.data.VcsLogData,
         properties: MainVcsLogUiProperties,
         colorManager: VcsLogColorManager,
         refresher: VisiblePackRefresherImpl,
         filters: VcsLogFilterCollection?
     ): VcsLogUiImpl {
-        return VcsLogUiImpl(logId, logData, colorManager, properties, refresher, filters)
+        return JujutsuVcsLogUiImpl(logId, logData, colorManager, properties, refresher, filters)
     }
 }
