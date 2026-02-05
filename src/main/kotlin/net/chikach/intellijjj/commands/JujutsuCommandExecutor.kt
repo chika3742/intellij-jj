@@ -4,12 +4,12 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.execution.process.ProcessOutput
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vfs.VirtualFile
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.atomic.AtomicReference
 
 class JujutsuCommandExecutor(private val project: Project) {
     
@@ -22,14 +22,20 @@ class JujutsuCommandExecutor(private val project: Project) {
         
         val handler = CapturingProcessHandler(commandLine)
         
-        // Check if we're on EDT
+        // Check if we're on EDT - if so, we need to run in background
         return if (ApplicationManager.getApplication().isDispatchThread) {
-            // Use runProcessWithProgressIndicator which is EDT-safe and handles cancellation
-            // This method is specifically designed for VCS operations that need to run on EDT
-            val indicator = ProgressManager.getInstance().progressIndicator ?: EmptyProgressIndicator()
-            // Note: runProcessWithProgressIndicator respects the progress indicator's cancellation
-            // and provides built-in timeout/cancellation support through the indicator
-            handler.runProcessWithProgressIndicator(indicator)
+            // Use ProgressManager to run the process in a background thread
+            // This prevents EDT violations while still providing progress indication
+            val result = AtomicReference<ProcessOutput>()
+            ProgressManager.getInstance().runProcessWithProgressSynchronously(
+                {
+                    result.set(handler.runProcess(30000))
+                },
+                "Running jj command",
+                true,  // canBeCanceled
+                project
+            )
+            result.get() ?: ProcessOutput().apply { exitCode = -1 }
         } else {
             // Already on background thread, execute directly with explicit timeout
             handler.runProcess(30000) // 30 second timeout
