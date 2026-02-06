@@ -20,6 +20,7 @@ import com.intellij.vcs.commit.CommitMessageUi
 import com.intellij.vcs.commit.DelayedCommitMessageProvider
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.JujutsuVcsUtil
 import net.chikach.intellijjj.commands.Revset
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -79,7 +80,7 @@ class JujutsuCommitMessageProvider : CommitMessageProvider, DelayedCommitMessage
     }
 
     private fun readCurrentDescription(project: Project, changeList: LocalChangeList?): String? {
-        val vcs = JujutsuVcs.getInstance(project) ?: return null
+        val vcs = JujutsuVcsUtil.getInstance(project) ?: return null
         val vcsManager = ProjectLevelVcsManager.getInstance(project)
         if (!vcsManager.checkVcsIsActive(JujutsuVcs.VCS_NAME)) return null
 
@@ -109,7 +110,7 @@ class JujutsuCommitMessageProvider : CommitMessageProvider, DelayedCommitMessage
         if (filePath != null) {
             return VcsUtil.getVcsRootFor(project, filePath)
         }
-        return vcsManager.getRootsUnderVcs(JujutsuVcs.getInstance(project)!!).firstOrNull()
+        return vcsManager.getRootsUnderVcs(JujutsuVcsUtil.getInstance(project)!!).firstOrNull()
     }
 
     private fun updateCommitMessage(
@@ -144,7 +145,7 @@ class JujutsuCommitMessageProvider : CommitMessageProvider, DelayedCommitMessage
     }
 
     private fun isJujutsuMetadataChange(path: String, project: Project): Boolean {
-        val vcs = JujutsuVcs.getInstance(project) ?: return false
+        val vcs = JujutsuVcsUtil.getInstance(project) ?: return false
         val roots = ProjectLevelVcsManager.getInstance(project).getRootsUnderVcs(vcs)
         if (roots.isEmpty()) return false
         val normalizedPath = FileUtil.toSystemIndependentName(path)

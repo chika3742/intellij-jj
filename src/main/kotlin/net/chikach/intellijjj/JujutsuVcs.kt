@@ -3,7 +3,6 @@ package net.chikach.intellijjj
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.AbstractVcs
-import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.VcsKey
 import com.intellij.openapi.vcs.VcsType
 import com.intellij.openapi.vcs.changes.ChangeProvider
@@ -76,13 +75,9 @@ class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
 
     companion object {
         const val VCS_NAME = "Jujutsu"
-        private val ourKey = createKey(VCS_NAME)
-        
-        fun getKey(): VcsKey = ourKey
-
-        fun getInstance(project: Project): JujutsuVcs? {
-            return ProjectLevelVcsManager.getInstance(project)
-                .findVcsByName(VCS_NAME) as? JujutsuVcs
-        }
+    }
+    
+    object Key {
+        val key: VcsKey = createKey(VCS_NAME)
     }
 }

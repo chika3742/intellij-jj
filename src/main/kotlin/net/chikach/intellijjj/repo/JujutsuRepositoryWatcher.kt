@@ -14,12 +14,11 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.util.CommonProcessors
 import com.intellij.vfs.AsyncVfsEventsListener
 import com.intellij.vfs.AsyncVfsEventsPostProcessor
-import net.chikach.intellijjj.JujutsuVcs
-import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlin.coroutines.coroutineContext
+import net.chikach.intellijjj.JujutsuVcsUtil
+import java.io.File
 
 @Service(Service.Level.PROJECT)
 class JujutsuRepositoryWatcher(
@@ -72,7 +71,7 @@ class JujutsuRepositoryWatcher(
     }
 
     private fun updateRoots() {
-        val vcs = JujutsuVcs.getInstance(project) ?: return
+        val vcs = JujutsuVcsUtil.getInstance(project) ?: return
         val roots = ProjectLevelVcsManager.getInstance(project).getRootsUnderVcs(vcs)
         val newJjRoots = mutableListOf<JjRoot>()
         val newWatchRequests = mutableSetOf<LocalFileSystem.WatchRequest>()

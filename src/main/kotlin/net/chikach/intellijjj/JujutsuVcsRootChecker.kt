@@ -5,7 +5,7 @@ import com.intellij.openapi.vcs.VcsRootChecker
 import com.intellij.openapi.vfs.VirtualFile
 
 class JujutsuVcsRootChecker : VcsRootChecker() {
-    override fun getSupportedVcs(): VcsKey = JujutsuVcs.getKey()
+    override fun getSupportedVcs(): VcsKey = JujutsuVcsUtil.getKey()
 
     override fun isRoot(file: VirtualFile): Boolean {
         if (!file.isDirectory) return false

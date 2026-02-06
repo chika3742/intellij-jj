@@ -13,12 +13,12 @@ import com.intellij.vcs.log.ui.MainVcsLogUi
 import com.intellij.vcs.log.ui.VcsLogColorManager
 import com.intellij.vcs.log.ui.VcsLogUiImpl
 import com.intellij.vcs.log.visible.VisiblePackRefresherImpl
-import net.chikach.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.JujutsuVcsUtil
 
 class JujutsuVcsLogUiFactoryProvider : CustomVcsLogUiFactoryProvider {
     override fun isActive(providers: Map<VirtualFile, VcsLogProvider>): Boolean {
         if (providers.isEmpty()) return false
-        val key = JujutsuVcs.getKey()
+        val key = JujutsuVcsUtil.getKey()
         return providers.values.all { it.supportedVcs == key }
     }
 

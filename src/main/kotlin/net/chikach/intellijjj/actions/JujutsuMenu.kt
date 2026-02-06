@@ -4,9 +4,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.AbstractVcs
 import com.intellij.openapi.vcs.actions.StandardVcsGroup
 import net.chikach.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.JujutsuVcsUtil
 
 class JujutsuMenu : StandardVcsGroup() {
-    override fun getVcs(project: Project): AbstractVcs? = JujutsuVcs.getInstance(project)
+    override fun getVcs(project: Project): AbstractVcs? = JujutsuVcsUtil.getInstance(project)
 
     override fun getVcsName(project: Project): String = JujutsuVcs.VCS_NAME
 }

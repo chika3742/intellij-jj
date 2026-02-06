@@ -15,7 +15,7 @@ import com.intellij.vcs.log.data.VcsLogData
 import com.intellij.vcs.log.ui.VcsLogUiEx
 import com.intellij.vcs.log.ui.highlighters.VcsLogHighlighterFactory
 import com.intellij.vcs.log.ui.table.VcsLogGraphTable
-import net.chikach.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.JujutsuVcsUtil
 import net.chikach.intellijjj.commands.JujutsuCommandExecutor
 import net.chikach.intellijjj.commands.JujutsuLogCommand
 import net.chikach.intellijjj.commands.Revset
@@ -55,7 +55,7 @@ class JujutsuCurrentChangeHighlighter(
 
     override fun update(dataPack: VcsLogDataPack, refreshHappened: Boolean) {
         val roots = dataPack.logProviders
-            .filterValues { it.supportedVcs == JujutsuVcs.getKey() }
+            .filterValues { it.supportedVcs == JujutsuVcsUtil.getKey() }
             .keys
         if (roots.isEmpty()) {
             currentCommitByRoot.clear()
