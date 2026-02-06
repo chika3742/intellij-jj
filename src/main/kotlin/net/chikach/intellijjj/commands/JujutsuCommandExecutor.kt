@@ -4,6 +4,7 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.execution.process.ProcessOutput
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vfs.VirtualFile
@@ -14,7 +15,8 @@ class JujutsuCommandExecutor(private val project: Project) {
     companion object {
         private const val EXEC_TIMEOUT = 30000 // 30 seconds
     }
-    
+
+    val log = logger<JujutsuCommandExecutor>()
     val logCommand = JujutsuLogCommand(this)
     
     fun execute(workingDir: VirtualFile, vararg args: String): ProcessOutput {
@@ -41,6 +43,7 @@ class JujutsuCommandExecutor(private val project: Project) {
         val output = execute(workingDir, *args)
         
         if (output.exitCode != 0) {
+            log.error(output.stderr)
             throw VcsException("jj command failed: ${output.stderr}")
         }
         

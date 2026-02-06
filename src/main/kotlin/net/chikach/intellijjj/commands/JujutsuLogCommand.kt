@@ -1,8 +1,13 @@
 package net.chikach.intellijjj.commands
 
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.serialization.json.Json
+import net.chikach.intellijjj.jujutsu.models.JujutsuCommit
 
 class JujutsuLogCommand(private val commandExecutor: JujutsuCommandExecutor) {
+    val log = logger<JujutsuLogCommand>()
+    
     private fun execute(
         root: VirtualFile,
         template: String,
@@ -11,7 +16,7 @@ class JujutsuLogCommand(private val commandExecutor: JujutsuCommandExecutor) {
         noGraph: Boolean,
         noColor: Boolean,
     ): String {
-        val args = mutableListOf("log")
+        val args = mutableListOf("log", "--quiet")
         if (noGraph) {
             args.add("--no-graph")
         }
@@ -42,6 +47,20 @@ class JujutsuLogCommand(private val commandExecutor: JujutsuCommandExecutor) {
         return execute(root, template, revset, limit, noGraph, noColor)
     }
 
+    fun getCommits(root: VirtualFile, revset: Revset? = null, limit: Int? = null): List<JujutsuCommit> {
+        val result = executeWithTemplate(
+            root,
+            JujutsuCommit.TEMPLATE,
+            revset,
+            limit,
+        ).trim()
+        
+        if (result.isEmpty()) {
+            return emptyList()
+        }
+        return result.lines().map { Json.decodeFromString<JujutsuCommit>(it.trim()) }
+    }
+
     fun readFirstNonBlankLine(
         root: VirtualFile,
         template: String,
@@ -59,21 +78,5 @@ class JujutsuLogCommand(private val commandExecutor: JujutsuCommandExecutor) {
         return output.lineSequence()
             .map { it.trim() }
             .firstOrNull { it.isNotEmpty() }
-    }
-
-    companion object {
-        fun buildCommitTemplate(delimiter: String, commitSeparator: String): String {
-            return """
-                commit_id ++ "$delimiter" ++ 
-                change_id ++ "$delimiter" ++ 
-                parents.map(|p| p.commit_id()).join(",") ++ "$delimiter" ++ 
-                author.name() ++ "$delimiter" ++ 
-                author.email() ++ "$delimiter" ++ 
-                author.timestamp() ++ "$delimiter" ++ 
-                description.first_line() ++ "$delimiter" ++ 
-                description ++ "$delimiter" ++
-                root ++ "$commitSeparator"
-            """.trimIndent().replace("\n", " ")
-        }
     }
 }

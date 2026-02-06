@@ -1,9 +1,18 @@
 package net.chikach.intellijjj.commands
 
+import com.intellij.vcs.log.VcsUser
+
+abstract class RevsetNode {
+    /**
+     * Renders this revset into Jujutsu CLI syntax.
+     */
+    abstract fun stringify(): String
+}
+
 /**
  * Represents a Jujutsu revset expression that can be rendered for CLI usage.
  */
-sealed class Revset {
+sealed class Revset : RevsetNode() {
     companion object {
         /**
          * Empty revset placeholder used in operators that allow omitted sides.
@@ -16,11 +25,9 @@ sealed class Revset {
         val WORKING_COPY: Revset = Symbol("@")
 
         /**
-         * Creates a parent-of revset, e.g. "@" -> "(@-)".
+         * Revset for the working copy.
          */
-        fun parentOf(revset: Revset): Revset {
-            return Operator("-", listOf(revset), OperatorType.POSTFIX)
-        }
+        val ALL: Revset = Function("all")
 
         /**
          * Creates an AND revset, e.g. "(a&b)".
@@ -36,6 +43,64 @@ sealed class Revset {
             if (revsets.isEmpty()) return EMPTY
             if (revsets.size == 1) return revsets.first()
             return Operator("|", revsets, OperatorType.INFIX)
+        }
+
+        /**
+         * Creates an OR revset for the provided list.
+         */
+        fun or(patterns: List<Pattern>): Pattern {
+            return Pattern.PatternOperator("|", Pattern.OperatorType.INFIX, patterns)
+        }
+
+        /**
+         * Creates an OR revset.
+         */
+        fun or(a: Revset, b: Revset): Revset {
+            return or(listOf(a, b))
+        }
+        
+        /**
+         * Creates a parent-of revset, e.g. "@" -> "(@-)".
+         */
+        fun parentOf(revset: Revset): Revset {
+            return Operator("-", listOf(revset), OperatorType.POSTFIX)
+        }
+
+        fun author(user: VcsUser): Revset {
+            return Function("author", listOf(Symbol(user.name)))
+        }
+
+        fun committer(user: VcsUser): Revset {
+            return Function("committer", listOf(Symbol(user.name)))
+        }
+
+        fun user(user: VcsUser): Revset {
+            return or(author(user), committer(user))
+        }
+
+        fun files(filePattern: Pattern): Revset {
+            return Function("files", listOf(filePattern))
+        }
+
+        /**
+         * Substring string pattern.
+         */
+        fun substring(text: String, caseSensitive: Boolean = true): Pattern {
+            return Pattern.PatternExpression("substring", text, caseSensitive)
+        }
+
+        /**
+         * Regex string pattern.
+         */
+        fun regex(regex: String, caseSensitive: Boolean = true): Pattern {
+            return Pattern.PatternExpression("regex", regex, caseSensitive)
+        }
+
+        /**
+         * File pattern matches workspace-relative file (or exact) path.
+         */
+        fun root(query: String, caseSensitive: Boolean = true): Pattern {
+            return Pattern.PatternExpression("root", query, caseSensitive)
         }
 
         /**
@@ -59,6 +124,13 @@ sealed class Revset {
         fun commitId(value: String): Revset {
             return Function("commit_id", listOf(Symbol(value)))
         }
+
+        /**
+         * Creates a description(...) revset.
+         */
+        fun description(pattern: RevsetNode): Revset {
+            return Function("description", listOf(pattern))
+        }
     }
     
     private data class Symbol(val name: String) : Revset() {
@@ -66,10 +138,10 @@ sealed class Revset {
             return name
         }
     }
-
+    
     private data class Function(
         val name: String,
-        val args: List<Revset> = emptyList()
+        val args: List<RevsetNode> = emptyList()
     ) : Revset() {
         init {
             require(name.isNotBlank()) { "Function name cannot be blank" }
@@ -131,9 +203,4 @@ sealed class Revset {
             return "($rendered)" 
         }
     }
-    
-    /**
-     * Renders this revset into Jujutsu CLI syntax.
-     */
-    abstract fun stringify(): String
 }

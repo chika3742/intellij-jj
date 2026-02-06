@@ -2,6 +2,8 @@ plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "2.2.0"
     id("org.jetbrains.intellij.platform") version "2.11.0"
+    
+    kotlin("plugin.serialization") version "2.3.0"
 }
 
 group = "net.chikach"
@@ -20,6 +22,10 @@ dependencies {
         intellijIdea("2025.3.2")
         bundledPlugin("com.intellij.modules.vcs")
     }
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
+    testImplementation(kotlin("test"))
 }
 
 intellijPlatform {
