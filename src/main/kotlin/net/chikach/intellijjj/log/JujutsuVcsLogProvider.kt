@@ -8,7 +8,11 @@ import com.intellij.openapi.vcs.VcsKey
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vcs.changes.TextRevisionNumber
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
+import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.util.Consumer
 import com.intellij.vcs.log.*
 import com.intellij.vcs.log.graph.PermanentGraph
@@ -202,9 +206,27 @@ class JujutsuVcsLogProvider(
         roots: Collection<VirtualFile>,
         refresher: VcsLogRefresher
     ): Disposable {
-        // For now, return an empty disposable
-        // In a full implementation, you'd watch for file system changes
-        return Disposable { }
+        if (roots.isEmpty()) return Disposable { }
+        val normalizedRoots = roots.associateBy { FileUtil.toSystemIndependentName(it.path) }
+        val connection = project.messageBus.connect()
+        connection.subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
+            override fun after(events: List<VFileEvent>) {
+                if (events.isEmpty()) return
+                val rootsToRefresh = LinkedHashSet<VirtualFile>()
+                for (event in events) {
+                    val eventPath = FileUtil.toSystemIndependentName(event.path)
+                    for ((rootPath, root) in normalizedRoots) {
+                        if (eventPath == "$rootPath/.jj" || eventPath.startsWith("$rootPath/.jj/")) {
+                            rootsToRefresh.add(root)
+                        }
+                    }
+                }
+                for (root in rootsToRefresh) {
+                    refresher.refresh(root)
+                }
+            }
+        })
+        return connection
     }
 
     override fun getCommitsMatchingFilter(
