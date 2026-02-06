@@ -15,10 +15,11 @@ import com.intellij.vcs.log.graph.PermanentGraph
 import com.intellij.vcs.log.impl.HashImpl
 import com.intellij.vcs.log.impl.VcsUserImpl
 import com.intellij.vcsUtil.VcsUtil
-import net.chikach.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.JujutsuVcsUtil
 import net.chikach.intellijjj.commands.JujutsuCommandExecutor
 import net.chikach.intellijjj.commands.JujutsuLogCommand
 import net.chikach.intellijjj.commands.Revset
+import net.chikach.intellijjj.jujutsu.JujutsuDiffParser
 import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
 import net.chikach.intellijjj.repo.JujutsuRepositoryWatcher
 import java.io.File
@@ -129,9 +130,7 @@ class JujutsuVcsLogProvider(
         }
     }
 
-    override fun getSupportedVcs(): VcsKey {
-        return JujutsuVcs.getKey()
-    }
+    override fun getSupportedVcs(): VcsKey = JujutsuVcsUtil.getKey()
     
     override fun getCurrentUser(root: VirtualFile): VcsUser? {
         return try {
@@ -292,19 +291,17 @@ class JujutsuVcsLogProvider(
             Revset.commitId(commit.hash.asString()).stringify()
         )
         val changes = mutableListOf<Change>()
+        fun toFilePath(relativePath: String): FilePath {
+            val absolutePath = File(root.path, relativePath).path
+            return VcsUtil.getFilePath(absolutePath, false)
+        }
         output.lineSequence().forEach { line ->
-            val entry = parseSummaryLine(line) ?: return@forEach
-            val absolutePath = File(root.path, entry.path).path
-            val filePath = VcsUtil.getFilePath(absolutePath, false)
-            val before = when (entry.type) {
-                JujutsuChangeType.MODIFIED, JujutsuChangeType.DELETED ->
-                    parentHash?.let { JujutsuContentRevision(root, filePath, entry.path, it, commandExecutor) }
-                JujutsuChangeType.ADDED -> null
+            val entry = JujutsuDiffParser.parseSummaryLine(line) ?: return@forEach
+            val before = entry.beforePath?.let { path ->
+                parentHash?.let { JujutsuContentRevision(root, toFilePath(path), path, it, commandExecutor) }
             }
-            val after = when (entry.type) {
-                JujutsuChangeType.MODIFIED, JujutsuChangeType.ADDED ->
-                    JujutsuContentRevision(root, filePath, entry.path, commit.hash.asString(), commandExecutor)
-                JujutsuChangeType.DELETED -> null
+            val after = entry.afterPath?.let { path ->
+                JujutsuContentRevision(root, toFilePath(path), path, commit.hash.asString(), commandExecutor)
             }
             if (before != null || after != null) {
                 changes.add(Change(before, after))
@@ -347,21 +344,6 @@ class JujutsuVcsLogProvider(
             subject = "<details unavailable>",
             changeId = ""
         )
-    }
-
-    private fun parseSummaryLine(line: String): JujutsuChangeEntry? {
-        val trimmed = line.trim()
-        if (trimmed.length < 3) return null
-        if (trimmed[1] != ' ') return null
-        val path = trimmed.substring(2).trim()
-        if (path.isEmpty()) return null
-        val type = when (trimmed[0]) {
-            'M' -> JujutsuChangeType.MODIFIED
-            'A' -> JujutsuChangeType.ADDED
-            'D' -> JujutsuChangeType.DELETED
-            else -> return null
-        }
-        return JujutsuChangeEntry(type, path)
     }
 
     private fun parseCommits(output: String, delimiter: String, commitSeparator: String): List<JujutsuCommitData> {
@@ -448,17 +430,6 @@ class JujutsuVcsLogProvider(
                 commitTime
             )
         }
-    }
-
-    private data class JujutsuChangeEntry(
-        val type: JujutsuChangeType,
-        val path: String
-    )
-
-    private enum class JujutsuChangeType {
-        MODIFIED,
-        ADDED,
-        DELETED
     }
 
     private class JujutsuContentRevision(

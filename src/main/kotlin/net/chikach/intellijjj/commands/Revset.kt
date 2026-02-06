@@ -1,33 +1,61 @@
 package net.chikach.intellijjj.commands
 
+/**
+ * Represents a Jujutsu revset expression that can be rendered for CLI usage.
+ */
 sealed class Revset {
     companion object {
+        /**
+         * Empty revset placeholder used in operators that allow omitted sides.
+         */
         val EMPTY: Revset = Symbol("")
+
+        /**
+         * Revset for the working copy.
+         */
         val WORKING_COPY: Revset = Symbol("@")
 
+        /**
+         * Creates a parent-of revset, e.g. "@" -> "(@-)".
+         */
         fun parentOf(revset: Revset): Revset {
             return Operator("-", listOf(revset), OperatorType.POSTFIX)
         }
 
+        /**
+         * Creates an AND revset, e.g. "(a&b)".
+         */
         fun and(a: Revset, b: Revset): Revset {
             return Operator("&", listOf(a, b), OperatorType.INFIX)
         }
 
+        /**
+         * Creates an OR revset for the provided list.
+         */
         fun or(revsets: List<Revset>): Revset {
             if (revsets.isEmpty()) return EMPTY
             if (revsets.size == 1) return revsets.first()
             return Operator("|", revsets, OperatorType.INFIX)
         }
 
+        /**
+         * Creates a revset that matches bookmarks.
+         */
         fun bookmarks(): Revset {
             // TODO: Implement pattern matching for bookmarks
             return Function("bookmarks", emptyList())
         }
 
+        /**
+         * Creates a range revset, allowing either side to be omitted.
+         */
         fun rangeWithRoot(from: Revset? = null, to: Revset? = null): Revset {
             return Operator("::", listOf(from ?: EMPTY, to ?: EMPTY), OperatorType.INFIX_STANDALONE)
         }
 
+        /**
+         * Creates a commit_id(...) revset.
+         */
         fun commitId(value: String): Revset {
             return Function("commit_id", listOf(Symbol(value)))
         }
@@ -104,5 +132,8 @@ sealed class Revset {
         }
     }
     
+    /**
+     * Renders this revset into Jujutsu CLI syntax.
+     */
     abstract fun stringify(): String
 }
