@@ -30,6 +30,8 @@
         <logProvider implementation="net.chikach.intellijjj.log.JujutsuVcsLogProvider"/>
         
         <customVcsLogUiFactoryProvider implementation="net.chikach.intellijjj.log.JujutsuVcsLogUiFactoryProvider"/>
+
+        <vcsRootChecker implementation="net.chikach.intellijjj.JujutsuVcsRootChecker"/>
     </extensions>
 
     <actions>
