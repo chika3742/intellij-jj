@@ -20,6 +20,7 @@ import com.intellij.vcs.commit.CommitMessageUi
 import com.intellij.vcs.commit.DelayedCommitMessageProvider
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.commands.Revset
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -84,7 +85,11 @@ class JujutsuCommitMessageProvider : CommitMessageProvider, DelayedCommitMessage
 
         val root = findRootForDescription(project, vcsManager, changeList) ?: return null
         return try {
-            val output = vcs.commandExecutor.executeAndCheck(root, "log", "--no-graph", "--color=never", "-r", "@", "-T", "description")
+            val output = vcs.commandExecutor.logCommand.executeWithTemplate(
+                root,
+                "description",
+                revset = Revset.WORKING_COPY,
+            )
             val message = output.trimEnd()
             message.ifBlank { null }
         } catch (e: Exception) {

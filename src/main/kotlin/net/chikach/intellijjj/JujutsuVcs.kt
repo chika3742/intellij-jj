@@ -13,7 +13,6 @@ import com.intellij.openapi.vcs.diff.DiffProvider
 import com.intellij.openapi.vcs.history.VcsHistoryProvider
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment
 import com.intellij.openapi.vcs.update.UpdateEnvironment
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.messages.MessageBusConnection
 import net.chikach.intellijjj.commands.JujutsuCommandExecutor
 import net.chikach.intellijjj.commit.JujutsuCheckinEnvironment

@@ -16,6 +16,7 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScope
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
+import net.chikach.intellijjj.commands.Revset
 import java.nio.file.Paths
 
 class JujutsuChangeProvider(
@@ -95,7 +96,7 @@ class JujutsuChangeProvider(
     private fun toChange(root: VirtualFile, entry: DiffSummaryEntry): Change? {
         val beforeRevision = entry.beforePath?.let { path ->
             val beforeFilePath = VcsUtil.getFilePath(Paths.get(root.path, path).toString(), false)
-            JujutsuWorkingCopyBaseRevision(root, beforeFilePath, path, vcs, PARENT_REVSET)
+            JujutsuWorkingCopyBaseRevision(root, beforeFilePath, path, vcs, Revset.parentOf(Revset.WORKING_COPY))
         }
         val afterRevision = entry.afterPath?.let { path ->
             val afterFilePath = VcsUtil.getFilePath(Paths.get(root.path, path).toString(), false)
@@ -116,11 +117,11 @@ class JujutsuChangeProvider(
         private val filePath: FilePath,
         private val relativePath: String,
         private val vcs: JujutsuVcs,
-        private val revset: String
+        private val revset: Revset
     ) : ContentRevision {
         override fun getContent(): String? {
             return try {
-                vcs.commandExecutor.executeAndCheck(root, "file", "show", "-r", revset, "--", relativePath)
+                vcs.commandExecutor.executeAndCheck(root, "file", "show", "-r", revset.stringify(), "--", relativePath)
             } catch (e: Exception) {
                 Logger.getInstance(JujutsuWorkingCopyBaseRevision::class.java)
                     .warn("Failed to read base content for $relativePath at $revset", e)
@@ -130,10 +131,6 @@ class JujutsuChangeProvider(
 
         override fun getFile(): FilePath = filePath
 
-        override fun getRevisionNumber(): VcsRevisionNumber = TextRevisionNumber(revset)
-    }
-
-    companion object {
-        private const val PARENT_REVSET = "@-"
+        override fun getRevisionNumber(): VcsRevisionNumber = TextRevisionNumber(revset.stringify())
     }
 }

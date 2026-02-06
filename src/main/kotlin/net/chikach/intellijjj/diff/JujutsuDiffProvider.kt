@@ -13,6 +13,7 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.commands.Revset
 
 class JujutsuDiffProvider(
     private val project: Project,
@@ -57,10 +58,7 @@ class JujutsuDiffProvider(
 
     private fun readWorkingCopyCommitId(root: VirtualFile): String? {
         return try {
-            val output = vcs.commandExecutor.executeAndCheck(root, "log", "-r", "@", "-T", "commit_id")
-            output.lineSequence()
-                .map { it.trim() }
-                .firstOrNull { it.isNotEmpty() }
+            vcs.commandExecutor.logCommand.readFirstNonBlankLine(root, "commit_id", Revset.WORKING_COPY)
         } catch (e: VcsException) {
             log.warn("Failed to read working copy commit id for ${root.path}", e)
             null
@@ -83,7 +81,7 @@ class JujutsuDiffProvider(
                     "file",
                     "show",
                     "-r",
-                    toRevset(revision),
+                    Revset.commitId(revision).stringify(),
                     "--",
                     relativePath
                 )
@@ -97,16 +95,6 @@ class JujutsuDiffProvider(
 
         override fun getRevisionNumber(): VcsRevisionNumber {
             return TextRevisionNumber(revision)
-        }
-    }
-
-    companion object {
-        private val COMMIT_ID_REGEX = Regex("^[0-9a-fA-F]{6,64}$")
-
-        private fun toRevset(revision: String): String {
-            val trimmed = revision.trim()
-            if (trimmed.isEmpty()) return trimmed
-            return if (COMMIT_ID_REGEX.matches(trimmed)) "commit_id($trimmed)" else trimmed
         }
     }
 }

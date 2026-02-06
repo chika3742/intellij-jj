@@ -15,6 +15,8 @@ class JujutsuCommandExecutor(private val project: Project) {
         private const val EXEC_TIMEOUT = 30000 // 30 seconds
     }
     
+    val logCommand = JujutsuLogCommand(this)
+    
     fun execute(workingDir: VirtualFile, vararg args: String): ProcessOutput {
         val commandLine = GeneralCommandLine("jj")
             .withWorkDirectory(workingDir.path)
@@ -43,57 +45,5 @@ class JujutsuCommandExecutor(private val project: Project) {
         }
         
         return output.stdout
-    }
-    
-    fun newChange(workingDir: VirtualFile, message: String? = null): String {
-        val args = mutableListOf("new")
-        if (message != null) {
-            args.add("-m")
-            args.add(message)
-        }
-        return executeAndCheck(workingDir, *args.toTypedArray())
-    }
-    
-    fun editChange(workingDir: VirtualFile, changeId: String): String {
-        return executeAndCheck(workingDir, "edit", changeId)
-    }
-    
-    fun splitChange(workingDir: VirtualFile): String {
-        return executeAndCheck(workingDir, "split")
-    }
-    
-    fun squashChange(workingDir: VirtualFile): String {
-        return executeAndCheck(workingDir, "squash")
-    }
-    
-    fun mergeChanges(workingDir: VirtualFile, vararg changeIds: String): String {
-        val args = mutableListOf("merge")
-        args.addAll(changeIds)
-        return executeAndCheck(workingDir, *args.toTypedArray())
-    }
-    
-    fun getLog(workingDir: VirtualFile, limit: Int = 100): String {
-        return executeAndCheck(workingDir, "log", "-l", limit.toString())
-    }
-    
-    fun createBookmark(workingDir: VirtualFile, name: String, revision: String? = null): String {
-        val args = mutableListOf("bookmark", "create", name)
-        if (revision != null) {
-            args.add("-r")
-            args.add(revision)
-        }
-        return executeAndCheck(workingDir, *args.toTypedArray())
-    }
-    
-    fun listBookmarks(workingDir: VirtualFile): String {
-        return executeAndCheck(workingDir, "bookmark", "list")
-    }
-    
-    fun deleteBookmark(workingDir: VirtualFile, name: String): String {
-        return executeAndCheck(workingDir, "bookmark", "delete", name)
-    }
-    
-    fun getCurrentChange(workingDir: VirtualFile): String {
-        return executeAndCheck(workingDir, "log", "-r", "@", "-T", "change_id")
     }
 }

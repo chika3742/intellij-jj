@@ -17,6 +17,8 @@ import com.intellij.vcs.log.impl.VcsUserImpl
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcs
 import net.chikach.intellijjj.commands.JujutsuCommandExecutor
+import net.chikach.intellijjj.commands.JujutsuLogCommand
+import net.chikach.intellijjj.commands.Revset
 import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
 import net.chikach.intellijjj.repo.JujutsuRepositoryWatcher
 import java.io.File
@@ -30,6 +32,7 @@ class JujutsuVcsLogProvider(
 
     private val LOG = Logger.getInstance(JujutsuVcsLogProvider::class.java)
     private val commandExecutor = JujutsuCommandExecutor(project)
+    private val logCommand = JujutsuLogCommand(commandExecutor)
     private val vcsObjectsFactory = project.getService(VcsLogObjectsFactory::class.java)
     
     companion object {
@@ -48,8 +51,6 @@ class JujutsuVcsLogProvider(
         private const val INVALID_TIMESTAMP = -1L
         private const val ROOT_DESCRIPTION = "<root>"
         private const val NO_DESC_DESCRIPTION = "<no description set>"
-
-        private fun commitRevset(hash: String): String = "commit_id(${hash.trim()})"
     }
 
     override fun readFirstBlock(
@@ -153,14 +154,14 @@ class JujutsuVcsLogProvider(
     override fun getContainingBranches(root: VirtualFile, commitHash: Hash): Collection<String> {
         return try {
             // Jujutsu uses "bookmarks" instead of branches
-            val output = commandExecutor.executeAndCheck(
+            val output = logCommand.executeWithTemplate(
                 root,
-                "log",
-                "-r",
-                "bookmarks() & ::${commitHash.asString()}",
-                "-T",
                 "bookmarks ++ \"\n\"",
-                "--no-graph"
+                Revset.and(
+                    Revset.bookmarks(),
+                    Revset.rangeWithRoot(to = Revset.commitId(commitHash.asString())),
+                ),
+                noGraph = true
             )
             output.trim().lines().toSet()
         } catch (e: Exception) {
@@ -176,15 +177,7 @@ class JujutsuVcsLogProvider(
     override fun getCurrentBranch(root: VirtualFile): String? {
         return try {
             // In Jujutsu, we can check for the current bookmark(s)
-            val output = commandExecutor.executeAndCheck(
-                root,
-                "log",
-                "-r",
-                "@",
-                "-T",
-                "bookmarks",
-                "--no-graph"
-            )
+            val output = logCommand.executeWithTemplate(root, "bookmarks", Revset.WORKING_COPY, noGraph = true)
             val bookmarks = output.trim()
             if (bookmarks.isNotEmpty() && bookmarks != NO_BOOKMARKS_OUTPUT) {
                 bookmarks.split(",").firstOrNull()?.trim()
@@ -254,15 +247,8 @@ class JujutsuVcsLogProvider(
         // Use a delimiter that's unlikely to appear in commit messages
         val delimiter = "\u001E" // ASCII Record Separator
         val commitSeparator = "\u001F" // ASCII Unit Separator
-        val template = buildLogTemplate(delimiter, commitSeparator)
-
-        val args = mutableListOf("log", "--no-graph", "-T", template)
-        if (limit > 0) {
-            args.add("-n")
-            args.add(limit.toString())
-        }
-        
-        val output = commandExecutor.executeAndCheck(root, *args.toTypedArray())
+        val template = JujutsuLogCommand.buildCommitTemplate(delimiter, commitSeparator)
+        val output = logCommand.executeWithTemplate(root, template, limit = limit, noGraph = true)
         return parseCommits(output, delimiter, commitSeparator)
     }
 
@@ -270,18 +256,23 @@ class JujutsuVcsLogProvider(
         if (hashes.isEmpty()) return emptyList()
         val delimiter = "\u001E" // ASCII Record Separator
         val commitSeparator = "\u001F" // ASCII Unit Separator
-        val template = buildLogTemplate(delimiter, commitSeparator)
+        val template = JujutsuLogCommand.buildCommitTemplate(delimiter, commitSeparator)
 
-        val revset = hashes.joinToString(" | ") { commitRevset(it) }
+        val revset = Revset.or(hashes.map { Revset.commitId(it) })
         return try {
-            val output = commandExecutor.executeAndCheck(root, "log", "--no-graph", "-r", revset, "-T", template)
+            val output = logCommand.executeWithTemplate(root, template, revset = revset, noGraph = true)
             parseCommits(output, delimiter, commitSeparator)
         } catch (e: Exception) {
             LOG.warn("Failed to read commits in a single revset call", e)
             val commits = mutableListOf<JujutsuCommitData>()
             hashes.forEach { hash ->
                 try {
-                    val output = commandExecutor.executeAndCheck(root, "log", "--no-graph", "-r", commitRevset(hash), "-T", template)
+                    val output = logCommand.executeWithTemplate(
+                        root,
+                        template,
+                        revset,
+                        noGraph = true
+                    )
                     commits.addAll(parseCommits(output, delimiter, commitSeparator))
                 } catch (inner: Exception) {
                     LOG.warn("Failed to read commit $hash", inner)
@@ -298,7 +289,7 @@ class JujutsuVcsLogProvider(
             "diff",
             "--summary",
             "-r",
-            commitRevset(commit.hash.asString())
+            Revset.commitId(commit.hash.asString()).stringify()
         )
         val changes = mutableListOf<Change>()
         output.lineSequence().forEach { line ->
@@ -325,9 +316,9 @@ class JujutsuVcsLogProvider(
     private fun readCommitForHash(root: VirtualFile, hash: String): JujutsuCommitData? {
         val delimiter = "\u001E" // ASCII Record Separator
         val commitSeparator = "\u001F" // ASCII Unit Separator
-        val template = buildLogTemplate(delimiter, commitSeparator)
+        val template = JujutsuLogCommand.buildCommitTemplate(delimiter, commitSeparator)
         return try {
-            val output = commandExecutor.executeAndCheck(root, "log", "--no-graph", "-r", commitRevset(hash), "-T", template)
+            val output = logCommand.executeWithTemplate(root, template, Revset.commitId(hash), noGraph = true)
             parseCommits(output, delimiter, commitSeparator).firstOrNull()
         } catch (e: Exception) {
             LOG.warn("Failed to read commit metadata for $hash", e)
@@ -420,20 +411,6 @@ class JujutsuVcsLogProvider(
         return commits
     }
 
-    private fun buildLogTemplate(delimiter: String, commitSeparator: String): String {
-        return """
-            commit_id ++ "$delimiter" ++ 
-            change_id ++ "$delimiter" ++ 
-            parents.map(|p| p.commit_id()).join(",") ++ "$delimiter" ++ 
-            author.name() ++ "$delimiter" ++ 
-            author.email() ++ "$delimiter" ++ 
-            author.timestamp() ++ "$delimiter" ++ 
-            description.first_line() ++ "$delimiter" ++ 
-            description ++ "$delimiter" ++
-            root ++ "$commitSeparator"
-        """.trimIndent().replace("\n", " ")
-    }
-
     private fun parseTimestamp(timestampStr: String): Long {
         try {
             // Jujutsu timestamps are in the format "2024-01-15 10:30:00.000 +00:00"
@@ -493,7 +470,7 @@ class JujutsuVcsLogProvider(
     ) : com.intellij.openapi.vcs.changes.ContentRevision {
         override fun getContent(): String? {
             return try {
-                commandExecutor.executeAndCheck(root, "file", "show", "-r", commitRevset(revision), "--", relativePath)
+                commandExecutor.executeAndCheck(root, "file", "show", "-r", Revset.commitId(revision).stringify(), "--", relativePath)
             } catch (e: Exception) {
                 Logger.getInstance(JujutsuContentRevision::class.java)
                     .warn("Failed to read content for $relativePath at $revision", e)
