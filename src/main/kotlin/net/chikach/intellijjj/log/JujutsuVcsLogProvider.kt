@@ -9,6 +9,7 @@ import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vcs.changes.TextRevisionNumber
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
@@ -208,6 +209,7 @@ class JujutsuVcsLogProvider(
     ): Disposable {
         if (roots.isEmpty()) return Disposable { }
         val normalizedRoots = roots.associateBy { FileUtil.toSystemIndependentName(it.path) }
+        val watchRequests = subscribeWatchJjMetadata(roots)
         val connection = project.messageBus.connect()
         connection.subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
             override fun after(events: List<VFileEvent>) {
@@ -226,7 +228,13 @@ class JujutsuVcsLogProvider(
                 }
             }
         })
-        return connection
+        return Disposable {
+            connection.dispose()
+            val localFs = LocalFileSystem.getInstance()
+            if (watchRequests.isNotEmpty()) {
+                localFs.removeWatchedRoots(watchRequests)
+            }
+        }
     }
 
     override fun getCommitsMatchingFilter(
@@ -261,6 +269,20 @@ class JujutsuVcsLogProvider(
         return limited.map { commit ->
             vcsObjectsFactory.createTimedCommit(commit.hash, commit.parents, commit.commitTime)
         }.toList()
+    }
+    
+    private fun subscribeWatchJjMetadata(roots: Collection<VirtualFile>): Collection<LocalFileSystem.WatchRequest> {
+        val localFs = LocalFileSystem.getInstance()
+        val watchRequests = mutableListOf<LocalFileSystem.WatchRequest>()
+        for (root in roots) {
+            val jjDir = File(root.path, ".jj")
+            if (jjDir.isDirectory) {
+                localFs.refreshAndFindFileByIoFile(jjDir)
+                localFs.addRootToWatch(jjDir.path, true)
+                    ?.let { watchRequests.add(it) }
+            }
+        }
+        return watchRequests
     }
     
     private fun readRefs(root: VirtualFile): MutableSet<JujutsuRef> {
