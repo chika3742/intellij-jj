@@ -28,6 +28,8 @@
         <vcsConfigurableProvider implementation="net.chikach.intellijjj.JujutsuConfigurableProvider"/>
         
         <logProvider implementation="net.chikach.intellijjj.log.JujutsuVcsLogProvider"/>
+
+        <logHighlighterFactory implementation="net.chikach.intellijjj.log.JujutsuCurrentChangeHighlighter$Factory"/>
         
         <customVcsLogUiFactoryProvider implementation="net.chikach.intellijjj.log.JujutsuVcsLogUiFactoryProvider"/>
 
