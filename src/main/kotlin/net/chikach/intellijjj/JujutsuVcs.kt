@@ -15,8 +15,8 @@ import com.intellij.openapi.vcs.rollback.RollbackEnvironment
 import com.intellij.openapi.vcs.update.UpdateEnvironment
 import com.intellij.openapi.vfs.VirtualFile
 import net.chikach.intellijjj.commands.JujutsuCommandExecutor
-import net.chikach.intellijjj.vcs.diff.JujutsuDiffProvider
-import net.chikach.intellijjj.vcs.JujutsuChangeProvider
+import net.chikach.intellijjj.diff.JujutsuDiffProvider
+import net.chikach.intellijjj.JujutsuChangeProvider
 
 class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
     

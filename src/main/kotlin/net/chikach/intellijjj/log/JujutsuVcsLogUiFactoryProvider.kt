@@ -1,6 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
-package net.chikach.intellijjj.vcs.log
+package net.chikach.intellijjj.log
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcs.log.VcsLogFilterCollection

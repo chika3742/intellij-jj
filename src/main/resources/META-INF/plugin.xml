@@ -27,11 +27,9 @@
         
         <vcsConfigurableProvider implementation="net.chikach.intellijjj.JujutsuConfigurableProvider"/>
         
-        <logProvider implementation="net.chikach.intellijjj.vcs.log.JujutsuVcsLogProvider"/>
+        <logProvider implementation="net.chikach.intellijjj.log.JujutsuVcsLogProvider"/>
         
-        <customVcsLogUiFactoryProvider implementation="net.chikach.intellijjj.vcs.log.JujutsuVcsLogUiFactoryProvider"/>
-
-        <openapi.vcs.ui.commitOptionsDialogExtension implementation="net.chikach.intellijjj.vcs.commit.JujutsuCommitOptionsDialogExtension"/>
+        <customVcsLogUiFactoryProvider implementation="net.chikach.intellijjj.log.JujutsuVcsLogUiFactoryProvider"/>
     </extensions>
 
     <actions>

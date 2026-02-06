@@ -1,10 +1,12 @@
-package net.chikach.intellijjj.vcs
+package net.chikach.intellijjj
 
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.changes.Change
+import com.intellij.openapi.vcs.changes.ChangeListManagerGate
 import com.intellij.openapi.vcs.changes.ChangeProvider
 import com.intellij.openapi.vcs.changes.ChangelistBuilder
 import com.intellij.openapi.vcs.changes.ContentRevision
@@ -14,7 +16,6 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScope
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
-import net.chikach.intellijjj.JujutsuVcs
 import java.nio.file.Paths
 
 class JujutsuChangeProvider(
@@ -25,10 +26,10 @@ class JujutsuChangeProvider(
     override fun getChanges(
         dirtyScope: VcsDirtyScope,
         builder: ChangelistBuilder,
-        progress: com.intellij.openapi.progress.ProgressIndicator,
-        addGate: com.intellij.openapi.vcs.changes.ChangeListManagerGate
+        progress: ProgressIndicator,
+        addGate: ChangeListManagerGate
     ) {
-        val roots = ProjectLevelVcsManager.getInstance(project).getRootsUnderVcs(vcs)
+        val roots = ProjectLevelVcsManager.Companion.getInstance(project).getRootsUnderVcs(vcs)
         for (root in roots) {
             val output = vcs.commandExecutor.executeAndCheck(root, "diff", "--summary", "--color=never", "-r", "@")
             output.lineSequence()

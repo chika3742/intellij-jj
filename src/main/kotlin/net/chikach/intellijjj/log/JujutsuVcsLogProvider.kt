@@ -1,4 +1,4 @@
-package net.chikach.intellijjj.vcs.log
+package net.chikach.intellijjj.log
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger

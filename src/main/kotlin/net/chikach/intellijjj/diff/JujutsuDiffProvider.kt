@@ -1,4 +1,4 @@
-package net.chikach.intellijjj.vcs.diff
+package net.chikach.intellijjj.diff
 
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
