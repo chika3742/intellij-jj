@@ -31,10 +31,17 @@
         
         <customVcsLogUiFactoryProvider implementation="net.chikach.intellijjj.log.JujutsuVcsLogUiFactoryProvider"/>
 
+        <vcs.commitMessageProvider implementation="net.chikach.intellijjj.commit.JujutsuCommitMessageProvider"/>
         <vcsRootChecker implementation="net.chikach.intellijjj.JujutsuVcsRootChecker"/>
     </extensions>
 
     <actions>
+        <group id="Jj.Menu" class="net.chikach.intellijjj.actions.JujutsuMenu" text="Jujutsu" popup="true">
+            <action id="Jj.Commit" class="net.chikach.intellijjj.actions.JjCommitAction" text="Commit" />
+
+            <add-to-group group-id="VcsGroup" anchor="after" relative-to-action="CheckinProject" />
+        </group>
+
         <group id="Jj.Log.ContextMenu">
             <action id="Jj.Change.Abandon" class="net.chikach.intellijjj.actions.JjAbandon" />
             

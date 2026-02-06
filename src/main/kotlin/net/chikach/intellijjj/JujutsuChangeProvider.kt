@@ -29,7 +29,7 @@ class JujutsuChangeProvider(
         progress: ProgressIndicator,
         addGate: ChangeListManagerGate
     ) {
-        val roots = ProjectLevelVcsManager.Companion.getInstance(project).getRootsUnderVcs(vcs)
+        val roots = ProjectLevelVcsManager.getInstance(project).getRootsUnderVcs(vcs)
         for (root in roots) {
             val output = vcs.commandExecutor.executeAndCheck(root, "diff", "--summary", "--color=never", "-r", "@")
             output.lineSequence()
