@@ -61,11 +61,10 @@ class JujutsuVcsLogProvider(
             val commits = parseLogOutput(root, requirements.commitCount)
 
             LOG.debug("Commits: ${commits}")
-            val refs = readRefs(root)
             
             return object : VcsLogProvider.DetailedLogData {
                 override fun getCommits(): List<VcsCommitMetadata> {
-                    return commits.map { it.toVcsCommitMetadata(root) }
+                    return commits.map { it.toVcsCommitMetadata(root, vcsObjectsFactory) }
                 }
                 override fun getRefs(): MutableSet<JujutsuRef> = mutableSetOf()
             }
@@ -85,8 +84,6 @@ class JujutsuVcsLogProvider(
                 consumer.consume(vcsObjectsFactory.createTimedCommit(commit.hash, commit.parents, commit.commitTime))
             }
             
-            val refs = readRefs(root)
-            
             return object : VcsLogProvider.LogData {
                 override fun getRefs(): MutableSet<JujutsuRef> = mutableSetOf()
                 override fun getUsers(): MutableSet<VcsUser> = mutableSetOf()
@@ -105,7 +102,7 @@ class JujutsuVcsLogProvider(
             // Optimize: fetch only the requested commits using revset
             if (hashes.isEmpty()) return
             val commits = readCommitsForHashes(root, hashes)
-            commits.forEach { commit -> consumer.consume(commit.toVcsCommitMetadata(root)) }
+            commits.forEach { commit -> consumer.consume(commit.toVcsCommitMetadata(root, vcsObjectsFactory)) }
         } catch (e: Exception) {
             LOG.warn("Failed to read metadata for specific hashes", e)
         }
@@ -257,7 +254,7 @@ class JujutsuVcsLogProvider(
                 }
             }
             if (detailsFilters.isNotEmpty()) {
-                val metadata = commit.toVcsCommitMetadata(root)
+                val metadata = commit.toVcsCommitMetadata(root, vcsObjectsFactory)
                 if (detailsFilters.any { !it.matches(metadata) }) {
                     return@filter false
                 }
@@ -285,45 +282,6 @@ class JujutsuVcsLogProvider(
         return watchRequests
     }
     
-    private fun readRefs(root: VirtualFile): MutableSet<JujutsuRef> {
-        val refs = mutableSetOf<JujutsuRef>()
-        try {
-            // Read bookmarks (branches in Jujutsu terminology)
-            val bookmarksOutput = commandExecutor.executeAndCheck(
-                root,
-                "bookmark",
-                "list",
-                "--quiet",
-                "-T",
-                "name ++ \" \" ++ if(normal_target, normal_target.commit_id(), \"null\") ++ \" \" ++ conflict ++ \"\\n\""
-            )
-            
-            bookmarksOutput.lines().forEach { line ->
-                val parts = line.trim().split(" ")
-                if (parts.size >= 3) {
-                    val name = parts[0]
-                    val commitId = parts[1]
-                    val conflict = parts[2]
-                    if (conflict != "true") {
-                        refs.add(
-                            object : JujutsuRef {
-                                override fun getName(): String = name
-                                override fun getCommitId(): String = commitId
-                                override fun getIsConflicted(): Boolean = conflict == "true"
-                                override fun getRoot(): VirtualFile = root
-                                override fun getType(): VcsRefType = JujutsuRefType.BOOKMARK
-                            }
-                        )
-                    }
-                    
-                }
-            }
-        } catch (e: Exception) {
-            LOG.warn("Failed to read refs", e)
-        }
-        return refs
-    }
-
     private fun parseLogOutput(root: VirtualFile, limit: Int): List<JujutsuCommitData> {
         // Build a template that outputs parseable format
         // Use a delimiter that's unlikely to appear in commit messages
@@ -451,7 +409,7 @@ class JujutsuVcsLogProvider(
     private fun parseCommits(output: String, delimiter: String, commitSeparator: String): List<JujutsuCommitData> {
         val commits = mutableListOf<JujutsuCommitData>()
         val commitStrings = output.split(commitSeparator)
-        
+
         for (commitStr in commitStrings) {
             if (commitStr.isBlank()) continue
             
@@ -496,9 +454,9 @@ class JujutsuVcsLogProvider(
 
     private fun buildLogTemplate(delimiter: String, commitSeparator: String): String {
         return """
-            commit_id.short(64) ++ "$delimiter" ++ 
-            change_id.short(64) ++ "$delimiter" ++ 
-            parents.map(|p| p.commit_id().short(64)).join(",") ++ "$delimiter" ++ 
+            commit_id ++ "$delimiter" ++ 
+            change_id ++ "$delimiter" ++ 
+            parents.map(|p| p.commit_id()).join(",") ++ "$delimiter" ++ 
             author.name() ++ "$delimiter" ++ 
             author.email() ++ "$delimiter" ++ 
             author.timestamp() ++ "$delimiter" ++ 
@@ -528,19 +486,20 @@ class JujutsuVcsLogProvider(
         val subject: String,
         val changeId: String
     ) {
-        fun toVcsCommitMetadata(root: VirtualFile): VcsCommitMetadata {
-            return object : VcsCommitMetadata {
-                override fun getId(): Hash = hash
-                override fun getParents(): List<Hash> = this@JujutsuCommitData.parents
-                override fun getCommitTime(): Long = this@JujutsuCommitData.commitTime
-                override fun getTimestamp(): Long = commitTime
-                override fun getRoot(): VirtualFile = root
-                override fun getSubject(): String = this@JujutsuCommitData.subject
-                override fun getAuthor(): VcsUser = this@JujutsuCommitData.author
-                override fun getFullMessage(): String = this@JujutsuCommitData.fullMessage
-                override fun getCommitter(): VcsUser = author
-                override fun getAuthorTime(): Long = commitTime
-            }
+        fun toVcsCommitMetadata(root: VirtualFile, factory: VcsLogObjectsFactory): VcsCommitMetadata {
+            return factory.createCommitMetadata(
+                hash,
+                parents,
+                commitTime,
+                root,
+                subject,
+                author.name,
+                author.email,
+                fullMessage,
+                author.name,
+                author.email,
+                commitTime
+            )
         }
     }
 
