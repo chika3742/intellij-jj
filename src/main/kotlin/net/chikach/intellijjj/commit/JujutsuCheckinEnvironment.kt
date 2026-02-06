@@ -1,6 +1,7 @@
 package net.chikach.intellijjj.commit
 
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vcs.FilePath
@@ -13,6 +14,7 @@ import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcs
+import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
 
 class JujutsuCheckinEnvironment(
     private val project: Project,
@@ -31,6 +33,7 @@ class JujutsuCheckinEnvironment(
         feedback: MutableSet<in String>
     ): MutableList<VcsException>? {
         val errors = mutableListOf<VcsException>()
+        var committedRoots = mutableListOf<VirtualFile>()
         val rootsToChanges = groupChangesByRoot(changes)
         val roots = if (rootsToChanges.isNotEmpty()) {
             rootsToChanges.keys
@@ -50,6 +53,7 @@ class JujutsuCheckinEnvironment(
                 val message = output.stderr.trim().ifEmpty { "jj commit failed" }
                 errors.add(VcsException(message))
             } else {
+                committedRoots.add(root)
                 VcsDirtyScopeManager.getInstance(project).rootDirty(root)
             }
         }
@@ -57,6 +61,9 @@ class JujutsuCheckinEnvironment(
         if (errors.isNotEmpty()) {
             log.warn("Commit failed with ${errors.size} error(s)")
             return errors
+        }
+        if (committedRoots.isNotEmpty()) {
+            scheduleLogRefresh(roots)
         }
         return null
     }
@@ -66,6 +73,14 @@ class JujutsuCheckinEnvironment(
     override fun scheduleUnversionedFilesForAddition(files: MutableList<out VirtualFile>): MutableList<VcsException>? = null
 
     override fun isRefreshAfterCommitNeeded(): Boolean = true
+
+    private fun scheduleLogRefresh(roots: Collection<VirtualFile>) {
+        ApplicationManager.getApplication().invokeLater {
+            roots.forEach { root ->
+                project.messageBus.syncPublisher(JujutsuRepositoryChangeListener.TOPIC).repositoryChanged(root)
+            }
+        }
+    }
 
     private fun groupChangesByRoot(changes: List<Change>): Map<VirtualFile, List<Change>> {
         val vcsManager = ProjectLevelVcsManager.getInstance(project)
