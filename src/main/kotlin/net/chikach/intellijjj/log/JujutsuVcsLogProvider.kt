@@ -8,12 +8,7 @@ import com.intellij.openapi.vcs.VcsKey
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vcs.changes.TextRevisionNumber
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
-import com.intellij.openapi.util.io.FileUtil
-import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.newvfs.BulkFileListener
-import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.util.Consumer
 import com.intellij.vcs.log.*
 import com.intellij.vcs.log.graph.PermanentGraph
@@ -22,6 +17,8 @@ import com.intellij.vcs.log.impl.VcsUserImpl
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcs
 import net.chikach.intellijjj.commands.JujutsuCommandExecutor
+import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
+import net.chikach.intellijjj.repo.JujutsuRepositoryWatcher
 import java.io.File
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatterBuilder
@@ -205,33 +202,15 @@ class JujutsuVcsLogProvider(
         refresher: VcsLogRefresher
     ): Disposable {
         if (roots.isEmpty()) return Disposable { }
-        val normalizedRoots = roots.associateBy { FileUtil.toSystemIndependentName(it.path) }
-        val watchRequests = subscribeWatchJjMetadata(roots)
+        project.getService(JujutsuRepositoryWatcher::class.java)
+        val rootsSet = roots.toSet()
         val connection = project.messageBus.connect()
-        connection.subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
-            override fun after(events: List<VFileEvent>) {
-                if (events.isEmpty()) return
-                val rootsToRefresh = LinkedHashSet<VirtualFile>()
-                for (event in events) {
-                    val eventPath = FileUtil.toSystemIndependentName(event.path)
-                    for ((rootPath, root) in normalizedRoots) {
-                        if (eventPath == "$rootPath/.jj" || eventPath.startsWith("$rootPath/.jj/")) {
-                            rootsToRefresh.add(root)
-                        }
-                    }
-                }
-                for (root in rootsToRefresh) {
-                    refresher.refresh(root)
-                }
+        connection.subscribe(JujutsuRepositoryChangeListener.TOPIC, JujutsuRepositoryChangeListener { root ->
+            if (rootsSet.contains(root)) {
+                refresher.refresh(root)
             }
         })
-        return Disposable {
-            connection.dispose()
-            val localFs = LocalFileSystem.getInstance()
-            if (watchRequests.isNotEmpty()) {
-                localFs.removeWatchedRoots(watchRequests)
-            }
-        }
+        return connection
     }
 
     override fun getCommitsMatchingFilter(
@@ -266,20 +245,6 @@ class JujutsuVcsLogProvider(
         return limited.map { commit ->
             vcsObjectsFactory.createTimedCommit(commit.hash, commit.parents, commit.commitTime)
         }.toList()
-    }
-    
-    private fun subscribeWatchJjMetadata(roots: Collection<VirtualFile>): Collection<LocalFileSystem.WatchRequest> {
-        val localFs = LocalFileSystem.getInstance()
-        val watchRequests = mutableListOf<LocalFileSystem.WatchRequest>()
-        for (root in roots) {
-            val jjDir = File(root.path, ".jj")
-            if (jjDir.isDirectory) {
-                localFs.refreshAndFindFileByIoFile(jjDir)
-                localFs.addRootToWatch(jjDir.path, true)
-                    ?.let { watchRequests.add(it) }
-            }
-        }
-        return watchRequests
     }
     
     private fun parseLogOutput(root: VirtualFile, limit: Int): List<JujutsuCommitData> {
