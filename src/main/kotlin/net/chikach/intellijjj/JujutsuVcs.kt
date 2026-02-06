@@ -7,14 +7,18 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.VcsKey
 import com.intellij.openapi.vcs.VcsType
 import com.intellij.openapi.vcs.changes.ChangeProvider
+import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.vcs.diff.DiffProvider
 import com.intellij.openapi.vcs.history.VcsHistoryProvider
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment
 import com.intellij.openapi.vcs.update.UpdateEnvironment
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.messages.MessageBusConnection
 import net.chikach.intellijjj.commands.JujutsuCommandExecutor
 import net.chikach.intellijjj.commit.JujutsuCheckinEnvironment
 import net.chikach.intellijjj.diff.JujutsuDiffProvider
+import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
 
 class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
     
@@ -22,6 +26,24 @@ class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
     private val diffProvider = JujutsuDiffProvider(project, this)
     private val checkinEnvironment = JujutsuCheckinEnvironment(project, this)
     val commandExecutor = JujutsuCommandExecutor(project)
+    private val dirtyScopeManager = VcsDirtyScopeManager.getInstance(project)
+    
+    private var repoChangeListenerConnection: MessageBusConnection? = null
+
+    override fun activate() {
+        super.activate()
+        repoChangeListenerConnection = project.messageBus.connect().apply {
+            subscribe(JujutsuRepositoryChangeListener.TOPIC,
+                JujutsuRepositoryChangeListener {
+                    dirtyScopeManager.rootDirty(it)
+                })
+        }
+    }
+
+    override fun deactivate() {
+        super.deactivate()
+        repoChangeListenerConnection?.dispose()
+    }
     
     override fun getDisplayName(): String = "Jujutsu"
 

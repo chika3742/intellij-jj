@@ -86,7 +86,7 @@ class JujutsuCheckinEnvironment(
         val vcsManager = ProjectLevelVcsManager.getInstance(project)
         return changes.mapNotNull { change ->
             val filePath = change.afterRevision?.file ?: change.beforeRevision?.file
-            val root = filePath?.let { VcsUtil.getVcsRootFor(project, it) }
+            val root = filePath?.let { vcsManager.getVcsRootFor(it) }
             if (filePath != null && root != null) {
                 root to change
             } else {
