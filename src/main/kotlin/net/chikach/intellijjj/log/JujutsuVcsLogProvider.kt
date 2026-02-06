@@ -46,6 +46,8 @@ class JujutsuVcsLogProvider(
         
         private const val NO_BOOKMARKS_OUTPUT = "(no bookmarks)"
         private const val INVALID_TIMESTAMP = -1L
+        private const val ROOT_DESCRIPTION = "<root>"
+        private const val NO_DESC_DESCRIPTION = "<no description set>"
 
         private fun commitRevset(hash: String): String = "commit_id(${hash.trim()})"
     }
@@ -393,6 +395,7 @@ class JujutsuVcsLogProvider(
                 val timestamp = parseTimestamp(parts[5])
                 val subject = parts[6]
                 val fullMessage = parts[7]
+                val isRoot = parts[8] == "true"
                 
                 val hash = HashImpl.build(commitId)
                 val parents = parentIds.map { HashImpl.build(it) }
@@ -404,8 +407,8 @@ class JujutsuVcsLogProvider(
                         parents = parents,
                         commitTime = timestamp,
                         author = author,
-                        fullMessage = fullMessage.ifEmpty { "<no description set>" },
-                        subject = subject.ifEmpty { "<no description set>" },
+                        fullMessage = if (isRoot) ROOT_DESCRIPTION else fullMessage.ifEmpty { NO_DESC_DESCRIPTION },
+                        subject = if (isRoot) ROOT_DESCRIPTION else subject.ifEmpty { NO_DESC_DESCRIPTION },
                         changeId = changeId
                     )
                 )
@@ -426,7 +429,8 @@ class JujutsuVcsLogProvider(
             author.email() ++ "$delimiter" ++ 
             author.timestamp() ++ "$delimiter" ++ 
             description.first_line() ++ "$delimiter" ++ 
-            description ++ "$commitSeparator"
+            description ++ "$delimiter" ++
+            root ++ "$commitSeparator"
         """.trimIndent().replace("\n", " ")
     }
 
@@ -435,13 +439,14 @@ class JujutsuVcsLogProvider(
             // Jujutsu timestamps are in the format "2024-01-15 10:30:00.000 +00:00"
             // (space-separated date and time with timezone offset, not standard ISO 8601)
             val cleanedStr = timestampStr.trim()
+            if (cleanedStr.isEmpty()) return INVALID_TIMESTAMP
             return ZonedDateTime.parse(cleanedStr, TIMESTAMP_FORMATTER).toInstant().toEpochMilli()
         } catch (e: Exception) {
             LOG.warn("Failed to parse timestamp: $timestampStr", e)
             return INVALID_TIMESTAMP
         }
     }
-
+    
     private data class JujutsuCommitData(
         val hash: Hash,
         val parents: List<Hash>,
