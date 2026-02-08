@@ -15,7 +15,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Consumer
 import com.intellij.vcs.log.*
 import com.intellij.vcs.log.graph.PermanentGraph
-import com.intellij.vcs.log.impl.HashImpl
 import com.intellij.vcs.log.impl.VcsUserImpl
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcsUtil
@@ -55,7 +54,7 @@ class JujutsuVcsLogProvider(
                 override fun getCommits(): List<VcsCommitMetadata> {
                     return commits.map { it.toCommitMetadata(root, vcsObjectsFactory) }
                 }
-                override fun getRefs(): MutableSet<JujutsuRef> = mutableSetOf()
+                override fun getRefs(): MutableSet<VcsRef> = extractBookmarksForCommits(commits, root)
             }
         } catch (e: Exception) {
             LOG.error("Failed to read first block", e)
@@ -74,7 +73,7 @@ class JujutsuVcsLogProvider(
             }
             
             return object : VcsLogProvider.LogData {
-                override fun getRefs(): MutableSet<JujutsuRef> = mutableSetOf()
+                override fun getRefs(): MutableSet<VcsRef> = extractBookmarksForCommits(commits, root)
                 override fun getUsers(): MutableSet<VcsUser> = mutableSetOf()
             }
         } catch (e: Exception) {
@@ -324,6 +323,21 @@ class JujutsuVcsLogProvider(
         }
     }
     
+    private fun extractBookmarksForCommits(commits: List<JujutsuCommit>, root: VirtualFile): MutableSet<VcsRef> {
+        return commits.mapNotNull { commit ->
+            if (commit.bookmarks.isNotEmpty()) {
+                commit.bookmarks.map { bookmark ->
+                    vcsObjectsFactory.createRef(
+                        commit.hash,
+                        bookmark.name,
+                        JujutsuRefType.BOOKMARK,
+                        root,
+                    )
+                }
+            } else null
+        }.flatten().toMutableSet()
+    }
+    
     private class JujutsuContentRevision(
         private val root: VirtualFile,
         private val filePath: FilePath,
@@ -407,20 +421,6 @@ class JujutsuVcsLogProvider(
         override fun setFavorite(reference: VcsRef, favorite: Boolean) {
             // Not implemented for now
         }
-    }
-    
-    private interface JujutsuRef : VcsRef {
-        override fun getCommitHash(): Hash {
-            if (getIsConflicted()) {
-                throw IllegalStateException("Cannot get commit hash for conflicted ref")
-            }
-            
-            return HashImpl.build(getCommitId()!!)
-        }
-        
-        fun getCommitId(): String?
-        
-        fun getIsConflicted(): Boolean
     }
     
     private enum class JujutsuRefType : VcsRefType {

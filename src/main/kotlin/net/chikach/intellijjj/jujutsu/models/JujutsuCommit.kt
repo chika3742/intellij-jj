@@ -27,6 +27,7 @@ data class JujutsuCommit(
      * List of parent commit IDs
      */
     val parents: List<String>,
+    val bookmarks: List<JujutsuCommitRef>,
     val author: JujutsuSignature,
     val committer: JujutsuSignature,
     /**
@@ -44,6 +45,7 @@ data class JujutsuCommit(
             "commitId" to JujutsuTemplateUtil.json("commit_id"),
             "changeId" to JujutsuTemplateUtil.json("change_id"),
             "parents" to JujutsuTemplateUtil.mappedList("parents", "|p| json(p.commit_id())"),
+            "bookmarks" to JujutsuTemplateUtil.mappedList("bookmarks", "|b| json(b)"),
             "author" to JujutsuTemplateUtil.json("author"),
             "committer" to JujutsuTemplateUtil.json("committer"),
             "description" to JujutsuTemplateUtil.json("description"),
@@ -61,6 +63,7 @@ data class JujutsuCommit(
                 commitId = hash,
                 parents = emptyList(),
                 author = JujutsuSignature(UNKNOWN_TEXT, UNKNOWN_TEXT, Clock.System.now()),
+                bookmarks = emptyList(),
                 committer = JujutsuSignature(UNKNOWN_TEXT, UNKNOWN_TEXT, Clock.System.now()),
                 description = NO_DESC_TEXT,
                 shortDescription = NO_DESC_TEXT,
