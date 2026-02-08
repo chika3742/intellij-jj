@@ -25,6 +25,10 @@ import java.awt.Color
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
+/**
+ * Highlights the commit that matches the current working-copy commit (`@`) per
+ * repository root in the VCS Log table.
+ */
 class JujutsuCurrentChangeHighlighter(
     logData: VcsLogData,
     private val logUi: VcsLogUi
@@ -100,6 +104,9 @@ class JujutsuCurrentChangeHighlighter(
         )
     }
 
+    /**
+     * Registers the highlighter in the VCS Log highlighter extension point.
+     */
     class Factory : VcsLogHighlighterFactory {
         override fun createHighlighter(logData: VcsLogData, logUi: VcsLogUi): VcsLogHighlighter {
             return JujutsuCurrentChangeHighlighter(logData, logUi)

@@ -13,6 +13,13 @@ import net.chikach.intellijjj.jujutsu.commands.JujutsuFileCommand
 import net.chikach.intellijjj.jujutsu.commands.JujutsuLogCommand
 import java.nio.charset.StandardCharsets
 
+/**
+ * Central boundary for invoking the `jj` CLI.
+ *
+ * Calls are executed with UTF-8 and a fixed timeout. When called from EDT,
+ * execution is wrapped in modal progress to avoid blocking the UI without
+ * feedback.
+ */
 class JujutsuCommandExecutor(private val project: Project) {
     companion object {
         private const val EXEC_TIMEOUT = 30000 // 30 seconds
@@ -22,6 +29,9 @@ class JujutsuCommandExecutor(private val project: Project) {
     val logCommand = JujutsuLogCommand(this)
     val fileCommand = JujutsuFileCommand(this)
     
+    /**
+     * Executes `jj` in [workingDir] with the provided arguments.
+     */
     fun execute(workingDir: VirtualFile, vararg args: String): ProcessOutput {
         val commandLine = GeneralCommandLine("jj")
             .withWorkDirectory(workingDir.path)
@@ -42,6 +52,9 @@ class JujutsuCommandExecutor(private val project: Project) {
         }
     }
     
+    /**
+     * Executes `jj` and returns stdout, throwing [VcsException] on non-zero exit.
+     */
     fun executeAndCheck(workingDir: VirtualFile, vararg args: String): String {
         val output = execute(workingDir, *args)
         

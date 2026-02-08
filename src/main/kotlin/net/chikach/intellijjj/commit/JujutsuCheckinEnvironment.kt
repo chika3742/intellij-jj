@@ -12,10 +12,15 @@ import com.intellij.openapi.vcs.changes.CommitContext
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcs
 import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
 
+/**
+ * Implements IntelliJ commit flow by delegating to `jj commit`.
+ *
+ * Commits are executed per VCS root. After successful commits, both dirty scope
+ * and VCS log refresh events are triggered.
+ */
 class JujutsuCheckinEnvironment(
     private val project: Project,
     private val vcs: JujutsuVcs
@@ -33,7 +38,7 @@ class JujutsuCheckinEnvironment(
         feedback: MutableSet<in String>
     ): MutableList<VcsException>? {
         val errors = mutableListOf<VcsException>()
-        var committedRoots = mutableListOf<VirtualFile>()
+        val committedRoots = mutableListOf<VirtualFile>()
         val rootsToChanges = groupChangesByRoot(changes)
         val roots = if (rootsToChanges.isNotEmpty()) {
             rootsToChanges.keys
@@ -74,6 +79,9 @@ class JujutsuCheckinEnvironment(
 
     override fun isRefreshAfterCommitNeeded(): Boolean = true
 
+    /**
+     * Publishes repository change events so log UIs refresh after commit.
+     */
     private fun scheduleLogRefresh(roots: Collection<VirtualFile>) {
         ApplicationManager.getApplication().invokeLater {
             roots.forEach { root ->
@@ -82,6 +90,9 @@ class JujutsuCheckinEnvironment(
         }
     }
 
+    /**
+     * Groups selected changes by the VCS root that owns each path.
+     */
     private fun groupChangesByRoot(changes: List<Change>): Map<VirtualFile, List<Change>> {
         val vcsManager = ProjectLevelVcsManager.getInstance(project)
         return changes.mapNotNull { change ->
@@ -95,6 +106,9 @@ class JujutsuCheckinEnvironment(
         }.groupBy({ it.first }, { it.second })
     }
 
+    /**
+     * Converts change paths to root-relative arguments accepted by `jj commit --`.
+     */
     private fun collectRelativePaths(root: VirtualFile, changes: List<Change>): List<String> {
         return changes.mapNotNull { change ->
             val filePath = change.afterRevision?.file ?: change.beforeRevision?.file ?: return@mapNotNull null

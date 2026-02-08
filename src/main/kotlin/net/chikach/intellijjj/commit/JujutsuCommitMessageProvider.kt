@@ -25,6 +25,13 @@ import net.chikach.intellijjj.jujutsu.Revset
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
+/**
+ * Synchronizes the commit dialog message with the current working-copy
+ * description from Jujutsu.
+ *
+ * The provider refreshes on changelist updates and `.jj` metadata changes,
+ * while preserving user edits once the message diverges from auto-filled text.
+ */
 class JujutsuCommitMessageProvider : CommitMessageProvider, DelayedCommitMessageProvider {
     private val log = Logger.getInstance(JujutsuCommitMessageProvider::class.java)
 
@@ -99,6 +106,9 @@ class JujutsuCommitMessageProvider : CommitMessageProvider, DelayedCommitMessage
         }
     }
 
+    /**
+     * Chooses a root to read the working-copy description from.
+     */
     private fun findRootForDescription(
         project: Project,
         vcsManager: ProjectLevelVcsManager,
@@ -113,6 +123,9 @@ class JujutsuCommitMessageProvider : CommitMessageProvider, DelayedCommitMessage
         return vcsManager.getRootsUnderVcs(JujutsuVcsUtil.getInstance(project)!!).firstOrNull()
     }
 
+    /**
+     * Updates commit message text only when it is still empty or auto-managed.
+     */
     private fun updateCommitMessage(
         commitUi: CommitMessageUi,
         lastAutoMessage: AtomicReference<String?>,
@@ -144,6 +157,9 @@ class JujutsuCommitMessageProvider : CommitMessageProvider, DelayedCommitMessage
         }
     }
 
+    /**
+     * Returns true for events under `.jj` in any active Jujutsu root.
+     */
     private fun isJujutsuMetadataChange(path: String, project: Project): Boolean {
         val vcs = JujutsuVcsUtil.getInstance(project) ?: return false
         val roots = ProjectLevelVcsManager.getInstance(project).getRootsUnderVcs(vcs)

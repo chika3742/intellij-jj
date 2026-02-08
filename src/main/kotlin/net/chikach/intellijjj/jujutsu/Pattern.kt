@@ -1,5 +1,9 @@
 package net.chikach.intellijjj.jujutsu
 
+/**
+ * String pattern / file pattern expression used by revset functions such as `description(...)`,
+ * `files(...)`, and `committer_date(...)`.
+ */
 sealed class Pattern : RevsetNode() {
     companion object {
         /**

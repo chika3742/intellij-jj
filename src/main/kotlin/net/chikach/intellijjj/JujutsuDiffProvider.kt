@@ -14,6 +14,12 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.jujutsu.Revset
 
+/**
+ * Resolves revisions and file contents for IntelliJ diff/history requests.
+ *
+ * The provider uses the working-copy commit (`@`) as the "latest" revision
+ * visible to IDE integrations.
+ */
 class JujutsuDiffProvider(
     private val project: Project,
     private val vcs: JujutsuVcs
@@ -64,6 +70,9 @@ class JujutsuDiffProvider(
         }
     }
 
+    /**
+     * Lazily loads file content for a specific commit revision via `jj file show`.
+     */
     private class JujutsuFileContentRevision(
         private val root: VirtualFile,
         private val filePath: FilePath,

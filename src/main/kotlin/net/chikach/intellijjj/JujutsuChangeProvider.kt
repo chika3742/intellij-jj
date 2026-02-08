@@ -20,6 +20,10 @@ import net.chikach.intellijjj.jujutsu.Revset
 import net.chikach.intellijjj.jujutsu.JujutsuDiffParser
 import java.nio.file.Paths
 
+/**
+ * Populates IntelliJ local changes by reading `jj diff --summary` for each
+ * Jujutsu root and mapping entries into [Change] instances.
+ */
 class JujutsuChangeProvider(
     private val project: Project,
     private val vcs: JujutsuVcs
@@ -65,6 +69,9 @@ class JujutsuChangeProvider(
         return Change(beforeRevision, afterRevision)
     }
 
+    /**
+     * Reads the content of the parent commit of the working copy for diffing.
+     */
     private class JujutsuWorkingCopyBaseRevision(
         private val root: VirtualFile,
         private val filePath: FilePath,

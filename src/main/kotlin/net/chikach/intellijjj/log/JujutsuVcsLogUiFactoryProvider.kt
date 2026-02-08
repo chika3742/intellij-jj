@@ -15,6 +15,9 @@ import com.intellij.vcs.log.ui.VcsLogUiImpl
 import com.intellij.vcs.log.visible.VisiblePackRefresherImpl
 import net.chikach.intellijjj.JujutsuVcsUtil
 
+/**
+ * Replaces the default VCS Log UI factory when all visible roots are Jujutsu.
+ */
 class JujutsuVcsLogUiFactoryProvider : CustomVcsLogUiFactoryProvider {
     override fun isActive(providers: Map<VirtualFile, VcsLogProvider>): Boolean {
         if (providers.isEmpty()) return false
@@ -31,6 +34,9 @@ class JujutsuVcsLogUiFactoryProvider : CustomVcsLogUiFactoryProvider {
     }
 }
 
+/**
+ * Creates the Jujutsu-specific VCS log UI implementation.
+ */
 private class JujutsuLogUiFactory(
     logId: String,
     filters: VcsLogFilterCollection?,

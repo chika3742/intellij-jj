@@ -30,6 +30,12 @@ import java.io.File
 import java.time.Instant
 import kotlin.time.ExperimentalTime
 
+/**
+ * Jujutsu-backed implementation of IntelliJ's [VcsLogProvider].
+ *
+ * It translates VCS Log API requests into `jj log`/`jj diff` invocations and
+ * maps IDE filters to revset expressions.
+ */
 class JujutsuVcsLogProvider(
     private val project: Project
 ) : VcsLogProvider {
@@ -274,6 +280,10 @@ class JujutsuVcsLogProvider(
         return commits.map { it.toTimedCommit(vcsObjectsFactory) }
     }
     
+    /**
+     * Reads commit metadata for specific hashes, with per-hash fallback when
+     * the grouped revset query fails.
+     */
     private fun readCommitsForHashes(root: VirtualFile, hashes: List<String>): List<JujutsuCommit> {
         if (hashes.isEmpty()) return emptyList()
 
@@ -294,6 +304,9 @@ class JujutsuVcsLogProvider(
         }
     }
 
+    /**
+     * Builds file-level changes for one commit from `jj diff --summary`.
+     */
     private fun readChanges(root: VirtualFile, commit: JujutsuCommit): List<Change> {
         val parentHash = commit.parents.firstOrNull()
         val output = commandExecutor.executeAndCheck(
@@ -332,6 +345,9 @@ class JujutsuVcsLogProvider(
         }
     }
 
+    /**
+     * Finds a commit by exact hash first, then by prefix match.
+     */
     private fun findCommitForHash(commits: List<JujutsuCommit>, hash: String): JujutsuCommit? {
         val normalized = hash.trim()
         val exact = commits.firstOrNull { it.commitId.equals(normalized, ignoreCase = true) }
@@ -367,6 +383,9 @@ class JujutsuVcsLogProvider(
         }.toMutableSet()
     }
     
+    /**
+     * Content revision backed by `jj file show` for log details diff views.
+     */
     private class JujutsuContentRevision(
         private val root: VirtualFile,
         private val filePath: FilePath,
@@ -392,6 +411,9 @@ class JujutsuVcsLogProvider(
         }
     }
 
+    /**
+     * Adapter from [JujutsuCommit] to IntelliJ [VcsFullCommitDetails].
+     */
     private class JujutsuFullCommitDetails(
         private val commit: JujutsuCommit,
         private val root: VirtualFile,
@@ -411,6 +433,9 @@ class JujutsuVcsLogProvider(
         override fun getAuthorTime(): Long = commit.author.timestamp.toEpochMilliseconds()
     }
 
+    /**
+     * Minimal ref manager for bookmark refs shown in the log UI.
+     */
     private class JujutsuLogRefManager : VcsLogRefManager {
         override fun serialize(output: java.io.DataOutput, type: VcsRefType) {
             // Serialize the ref type - for now we only support BOOKMARK

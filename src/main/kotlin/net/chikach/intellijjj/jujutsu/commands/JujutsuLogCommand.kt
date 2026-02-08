@@ -7,6 +7,9 @@ import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
 import net.chikach.intellijjj.jujutsu.Revset
 import net.chikach.intellijjj.jujutsu.models.JujutsuCommit
 
+/**
+ * Wrapper for `jj log` queries used by change, diff, and VCS log integrations.
+ */
 class JujutsuLogCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuCommand(commandExecutor) {
     val log = logger<JujutsuLogCommand>()
     
@@ -30,6 +33,9 @@ class JujutsuLogCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuComman
         return execute(root, args)
     }
     
+    /**
+     * Executes `jj log` with an arbitrary template and optional revset/limit.
+     */
     fun executeWithTemplate(
         root: VirtualFile,
         template: String,
@@ -39,6 +45,9 @@ class JujutsuLogCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuComman
         return execute(root, template, revset, limit)
     }
 
+    /**
+     * Decodes line-delimited JSON commits emitted by [JujutsuCommit.TEMPLATE].
+     */
     fun getCommits(root: VirtualFile, revset: Revset? = null, limit: Int? = null): List<JujutsuCommit> {
         val result = executeWithTemplate(
             root,
@@ -53,6 +62,9 @@ class JujutsuLogCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuComman
         return result.lines().map { Json.decodeFromString<JujutsuCommit>(it.trim()) }
     }
 
+    /**
+     * Reads the first non-empty line from a template output.
+     */
     fun readFirstNonBlankLine(
         root: VirtualFile,
         template: String,

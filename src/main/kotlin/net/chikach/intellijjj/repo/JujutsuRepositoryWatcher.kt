@@ -20,6 +20,10 @@ import kotlinx.coroutines.ensureActive
 import net.chikach.intellijjj.JujutsuVcsUtil
 import java.io.File
 
+/**
+ * Watches `.jj` directories of active Jujutsu roots and publishes repository
+ * change notifications for affected roots.
+ */
 @Service(Service.Level.PROJECT)
 class JujutsuRepositoryWatcher(
     private val project: Project,
@@ -70,6 +74,9 @@ class JujutsuRepositoryWatcher(
         }
     }
 
+    /**
+     * Rebuilds the list of watched `.jj` roots from current VCS mappings.
+     */
     private fun updateRoots() {
         val vcs = JujutsuVcsUtil.getInstance(project) ?: return
         val roots = ProjectLevelVcsManager.getInstance(project).getRootsUnderVcs(vcs)

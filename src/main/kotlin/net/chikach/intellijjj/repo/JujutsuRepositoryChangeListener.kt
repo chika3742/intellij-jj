@@ -3,6 +3,9 @@ package net.chikach.intellijjj.repo
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.messages.Topic
 
+/**
+ * Project-level topic used to signal repository metadata changes per root.
+ */
 fun interface JujutsuRepositoryChangeListener {
     fun repositoryChanged(root: VirtualFile)
 

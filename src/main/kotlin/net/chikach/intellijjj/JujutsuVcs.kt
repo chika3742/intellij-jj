@@ -17,6 +17,13 @@ import net.chikach.intellijjj.commit.JujutsuCheckinEnvironment
 import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
 import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
 
+/**
+ * IntelliJ VCS entry point for the Jujutsu integration.
+ *
+ * This wires the platform extension points (change provider, diff provider,
+ * check-in environment) and reacts to repository metadata updates by marking
+ * affected roots dirty so the IDE refreshes state.
+ */
 class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
     
     private val changeProvider = JujutsuChangeProvider(project, this)
@@ -76,6 +83,7 @@ class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
         const val VCS_NAME = "Jujutsu"
     }
     
+    /** Shared [VcsKey] holder used by registrations and providers. */
     object Key {
         val key: VcsKey = createKey(VCS_NAME)
     }

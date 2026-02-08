@@ -1,5 +1,9 @@
 package net.chikach.intellijjj.jujutsu
 
+/**
+ * Utilities for composing `jj log -T` template snippets that emit line-delimited
+ * JSON suitable for Kotlin serialization.
+ */
 object JujutsuTemplateUtil {
     /**
      * Creates a serializable template string from the given parameters.
@@ -42,6 +46,9 @@ object JujutsuTemplateUtil {
         }
     }
 
+    /**
+     * Escapes a string for inclusion in Jujutsu template string literals.
+     */
     fun escape(text: String): String {
         return text
             .replace("\\", "\\\\")

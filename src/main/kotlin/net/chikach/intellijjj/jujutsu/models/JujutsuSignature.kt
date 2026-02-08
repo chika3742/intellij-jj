@@ -9,6 +9,9 @@ import kotlinx.serialization.Serializable
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
+/**
+ * Author/committer signature emitted by Jujutsu.
+ */
 @Serializable
 data class JujutsuSignature(
     val name: String,
@@ -24,6 +27,9 @@ data class JujutsuSignature(
     val vcsUser: VcsUser
         get() = VcsUserImpl(safeName, safeEmail)
 
+    /**
+     * Creates a pooled VCS user object via factory.
+     */
     fun getVcsUser(factory: VcsLogObjectsFactory): VcsUser {
         return factory.createUser(safeName, safeEmail)
     }

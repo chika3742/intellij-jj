@@ -6,6 +6,9 @@ import com.intellij.openapi.vcs.actions.StandardVcsGroup
 import net.chikach.intellijjj.JujutsuVcs
 import net.chikach.intellijjj.JujutsuVcsUtil
 
+/**
+ * VCS main-menu group shown for Jujutsu roots.
+ */
 class JujutsuMenu : StandardVcsGroup() {
     override fun getVcs(project: Project): AbstractVcs? = JujutsuVcsUtil.getInstance(project)
 

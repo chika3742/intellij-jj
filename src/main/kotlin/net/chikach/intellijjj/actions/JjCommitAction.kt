@@ -7,6 +7,9 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.actions.commit.CommonCheckinProjectAction
 import net.chikach.intellijjj.JujutsuVcs
 
+/**
+ * Shows the standard IntelliJ commit action only when Jujutsu VCS is active.
+ */
 class JjCommitAction : DumbAwareAction("Commit") {
     private val delegate = CommonCheckinProjectAction()
 

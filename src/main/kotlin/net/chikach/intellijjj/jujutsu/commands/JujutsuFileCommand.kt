@@ -4,6 +4,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
 import net.chikach.intellijjj.jujutsu.Revset
 
+/**
+ * Wrapper for `jj file` commands.
+ */
 class JujutsuFileCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuCommand(commandExecutor) {
     private fun execute(
         root: VirtualFile,

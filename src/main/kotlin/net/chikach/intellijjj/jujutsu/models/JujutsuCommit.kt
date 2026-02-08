@@ -10,9 +10,13 @@ import com.intellij.vcs.log.VcsLogObjectsFactory
 import com.intellij.vcs.log.impl.HashImpl
 import kotlinx.serialization.Serializable
 import net.chikach.intellijjj.jujutsu.JujutsuTemplateUtil
+import net.chikach.intellijjj.jujutsu.commands.JujutsuLogCommand
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
+/**
+ * Serializable representation of a commit returned from `jj log`.
+ */
 @Serializable
 data class JujutsuCommit(
     /**
@@ -41,6 +45,9 @@ data class JujutsuCommit(
     val isRoot: Boolean
 ) {
     companion object {
+        /**
+         * JSON-lines template consumed by [JujutsuLogCommand.getCommits].
+         */
         val TEMPLATE = JujutsuTemplateUtil.createSerializableTemplate(mapOf(
             "commitId" to JujutsuTemplateUtil.json("commit_id"),
             "changeId" to JujutsuTemplateUtil.json("change_id"),
@@ -57,6 +64,9 @@ data class JujutsuCommit(
         const val NO_DESC_TEXT = "<no description set>"
         const val ROOT_COMMIT_DESC = "<root>"
 
+        /**
+         * Fallback commit used when metadata lookup fails for a requested hash.
+         */
         fun placeholder(hash: String): JujutsuCommit {
             return JujutsuCommit(
                 changeId = UNKNOWN_TEXT,
@@ -84,6 +94,9 @@ data class JujutsuCommit(
     val readableShortDescription: String
         get() = if (isRoot) ROOT_COMMIT_DESC else shortDescription.ifEmpty { NO_DESC_TEXT }
 
+    /**
+     * Converts this commit to IntelliJ metadata model.
+     */
     fun toCommitMetadata(root: VirtualFile, factory: VcsLogObjectsFactory): VcsCommitMetadata {
         return factory.createCommitMetadata(
             hash,
@@ -100,6 +113,9 @@ data class JujutsuCommit(
         )
     }
 
+    /**
+     * Converts this commit to the lightweight timed commit model.
+     */
     fun toTimedCommit(factory: VcsLogObjectsFactory): TimedVcsCommit {
         return factory.createTimedCommit(
             hash,

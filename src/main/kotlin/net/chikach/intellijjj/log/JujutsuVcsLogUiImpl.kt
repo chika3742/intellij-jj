@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 package net.chikach.intellijjj.log
 
 import com.intellij.openapi.Disposable
@@ -11,6 +13,10 @@ import com.intellij.vcs.log.ui.filter.VcsLogFilterUiEx
 import com.intellij.vcs.log.visible.VisiblePackRefresher
 import com.intellij.vcs.log.visible.filters.VcsLogFilterObject
 
+/**
+ * Custom log UI that limits filter controls to features currently mapped to
+ * Jujutsu revset support.
+ */
 class JujutsuVcsLogUiImpl(
     id: String,
     logData: VcsLogData,
@@ -28,6 +34,9 @@ class JujutsuVcsLogUiImpl(
     }
 }
 
+/**
+ * Filter UI variant without branch and root filters.
+ */
 private class JujutsuVcsLogFilterUi(
     logData: VcsLogData,
     filterConsumer: java.util.function.Consumer<VcsLogFilterCollection>,

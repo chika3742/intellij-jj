@@ -4,6 +4,9 @@ import com.intellij.openapi.vcs.VcsKey
 import com.intellij.openapi.vcs.VcsRootChecker
 import com.intellij.openapi.vfs.VirtualFile
 
+/**
+ * Detects Jujutsu roots by checking for a `.jj` directory.
+ */
 class JujutsuVcsRootChecker : VcsRootChecker() {
     override fun getSupportedVcs(): VcsKey = JujutsuVcsUtil.getKey()
 
