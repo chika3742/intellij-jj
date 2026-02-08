@@ -26,6 +26,7 @@ class JujutsuFileCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuComma
             args.add("-r")
             args.add(revset.stringify())
         }
+        args.add("--")
         args.add(filePath)
         return execute(root, "show", *args.toTypedArray())
     }

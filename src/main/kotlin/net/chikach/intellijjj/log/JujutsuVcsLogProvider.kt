@@ -19,7 +19,6 @@ import com.intellij.vcs.log.impl.VcsUserImpl
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcsUtil
 import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
-import net.chikach.intellijjj.jujutsu.commands.JujutsuLogCommand
 import net.chikach.intellijjj.jujutsu.Pattern
 import net.chikach.intellijjj.jujutsu.Revset
 import net.chikach.intellijjj.jujutsu.JujutsuDiffParser
@@ -42,7 +41,7 @@ class JujutsuVcsLogProvider(
 
     private val LOG = Logger.getInstance(JujutsuVcsLogProvider::class.java)
     private val commandExecutor = JujutsuCommandExecutor(project)
-    private val logCommand = JujutsuLogCommand(commandExecutor)
+    private val logCommand = commandExecutor.logCommand
     private val vcsObjectsFactory = project.getService(VcsLogObjectsFactory::class.java)
     
     companion object {
@@ -129,16 +128,9 @@ class JujutsuVcsLogProvider(
     
     override fun getCurrentUser(root: VirtualFile): VcsUser? {
         return try {
-            val nameOutput = commandExecutor.execute(root, "config", "get", "user.name")
-            val emailOutput = commandExecutor.execute(root, "config", "get", "user.email")
-            
-            if (nameOutput.exitCode == 0 && emailOutput.exitCode == 0) {
-                val name = nameOutput.stdout.trim()
-                val email = emailOutput.stdout.trim()
-                if (name.isNotEmpty() && email.isNotEmpty()) {
-                    VcsUserImpl(name, email)
-                } else null
-            } else null
+            val name = commandExecutor.configCommand.getValue(root, "user.name")
+            val email = commandExecutor.configCommand.getValue(root, "user.email")
+            if (!name.isNullOrEmpty() && !email.isNullOrEmpty()) VcsUserImpl(name, email) else null
         } catch (e: Exception) {
             LOG.warn("Failed to get current user", e)
             null
@@ -309,13 +301,7 @@ class JujutsuVcsLogProvider(
      */
     private fun readChanges(root: VirtualFile, commit: JujutsuCommit): List<Change> {
         val parentHash = commit.parents.firstOrNull()
-        val output = commandExecutor.executeAndCheck(
-            root,
-            "diff",
-            "--summary",
-            "-r",
-            Revset.commitId(commit.hash.asString()).stringify()
-        )
+        val output = commandExecutor.diffCommand.getSummary(root, Revset.commitId(commit.hash.asString()))
         val changes = mutableListOf<Change>()
         fun toFilePath(relativePath: String): FilePath {
             val absolutePath = File(root.path, relativePath).path
@@ -395,7 +381,7 @@ class JujutsuVcsLogProvider(
     ) : com.intellij.openapi.vcs.changes.ContentRevision {
         override fun getContent(): String? {
             return try {
-                commandExecutor.executeAndCheck(root, "file", "show", "-r", Revset.commitId(revision).stringify(), "--", relativePath)
+                commandExecutor.fileCommand.getContents(root, relativePath, Revset.commitId(revision))
             } catch (e: Exception) {
                 Logger.getInstance(JujutsuContentRevision::class.java)
                     .warn("Failed to read content for $relativePath at $revision", e)

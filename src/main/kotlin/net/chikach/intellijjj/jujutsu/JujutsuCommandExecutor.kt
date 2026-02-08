@@ -9,6 +9,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.ide.progress.runWithModalProgressBlocking
+import net.chikach.intellijjj.jujutsu.commands.JujutsuCommitCommand
+import net.chikach.intellijjj.jujutsu.commands.JujutsuConfigCommand
+import net.chikach.intellijjj.jujutsu.commands.JujutsuDiffCommand
 import net.chikach.intellijjj.jujutsu.commands.JujutsuFileCommand
 import net.chikach.intellijjj.jujutsu.commands.JujutsuLogCommand
 import java.nio.charset.StandardCharsets
@@ -28,6 +31,9 @@ class JujutsuCommandExecutor(private val project: Project) {
     private val log = logger<JujutsuCommandExecutor>()
     val logCommand = JujutsuLogCommand(this)
     val fileCommand = JujutsuFileCommand(this)
+    val diffCommand = JujutsuDiffCommand(this)
+    val configCommand = JujutsuConfigCommand(this)
+    val commitCommand = JujutsuCommitCommand(this)
     
     /**
      * Executes `jj` in [workingDir] with the provided arguments.

@@ -48,12 +48,7 @@ class JujutsuCheckinEnvironment(
 
         for (root in roots) {
             val fileArgs = rootsToChanges[root]?.let { collectRelativePaths(root, it) }.orEmpty()
-            val args = mutableListOf("commit", "-m", commitMessage)
-            if (fileArgs.isNotEmpty()) {
-                args.add("--")
-                args.addAll(fileArgs)
-            }
-            val output = vcs.commandExecutor.execute(root, *args.toTypedArray())
+            val output = vcs.commandExecutor.commitCommand.commit(root, commitMessage, fileArgs)
             if (output.exitCode != 0) {
                 val message = output.stderr.trim().ifEmpty { "jj commit failed" }
                 errors.add(VcsException(message))

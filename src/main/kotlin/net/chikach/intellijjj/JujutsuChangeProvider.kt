@@ -37,7 +37,7 @@ class JujutsuChangeProvider(
     ) {
         val roots = ProjectLevelVcsManager.getInstance(project).getRootsUnderVcs(vcs)
         for (root in roots) {
-            val output = vcs.commandExecutor.executeAndCheck(root, "diff", "--summary", "--color=never", "-r", "@")
+            val output = vcs.commandExecutor.diffCommand.getSummary(root, Revset.WORKING_COPY)
             output.lineSequence()
                 .map { it.trimEnd() }
                 .filter { it.isNotEmpty() }

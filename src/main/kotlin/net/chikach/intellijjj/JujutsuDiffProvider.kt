@@ -84,15 +84,7 @@ class JujutsuDiffProvider(
 
         override fun getContent(): String? {
             return try {
-                vcs.commandExecutor.executeAndCheck(
-                    root,
-                    "file",
-                    "show",
-                    "-r",
-                    Revset.commitId(revision).stringify(),
-                    "--",
-                    relativePath
-                )
+                vcs.commandExecutor.fileCommand.getContents(root, relativePath, Revset.commitId(revision))
             } catch (e: Exception) {
                 log.warn("Failed to read content for $relativePath at $revision", e)
                 null
