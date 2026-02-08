@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.ide.progress.runWithModalProgressBlocking
+import net.chikach.intellijjj.jujutsu.commands.JujutsuFileCommand
 import net.chikach.intellijjj.jujutsu.commands.JujutsuLogCommand
 import java.nio.charset.StandardCharsets
 
@@ -17,8 +18,9 @@ class JujutsuCommandExecutor(private val project: Project) {
         private const val EXEC_TIMEOUT = 30000 // 30 seconds
     }
 
-    val log = logger<JujutsuCommandExecutor>()
+    private val log = logger<JujutsuCommandExecutor>()
     val logCommand = JujutsuLogCommand(this)
+    val fileCommand = JujutsuFileCommand(this)
     
     fun execute(workingDir: VirtualFile, vararg args: String): ProcessOutput {
         val commandLine = GeneralCommandLine("jj")

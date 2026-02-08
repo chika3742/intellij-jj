@@ -54,7 +54,8 @@ class JujutsuChangeProvider(
     private fun toChange(root: VirtualFile, entry: JujutsuDiffParser.DiffSummaryEntry): Change? {
         val beforeRevision = entry.beforePath?.let { path ->
             val beforeFilePath = VcsUtil.getFilePath(Paths.get(root.path, path).toString(), false)
-            JujutsuWorkingCopyBaseRevision(root, beforeFilePath, path, vcs, Revset.parentOf(Revset.WORKING_COPY))
+            val wcCommit = vcs.commandExecutor.logCommand.getCommits(root, Revset.parentOf(Revset.WORKING_COPY)).first()
+            JujutsuWorkingCopyBaseRevision(root, beforeFilePath, path, vcs, wcCommit.commitId)
         }
         val afterRevision = entry.afterPath?.let { path ->
             val afterFilePath = VcsUtil.getFilePath(Paths.get(root.path, path).toString(), false)
@@ -69,20 +70,20 @@ class JujutsuChangeProvider(
         private val filePath: FilePath,
         private val relativePath: String,
         private val vcs: JujutsuVcs,
-        private val revset: Revset
+        private val commitId: String
     ) : ContentRevision {
         override fun getContent(): String? {
             return try {
-                vcs.commandExecutor.executeAndCheck(root, "file", "show", "-r", revset.stringify(), "--", relativePath)
+                vcs.commandExecutor.fileCommand.getContents(root, relativePath, Revset.commitId(commitId))
             } catch (e: Exception) {
                 Logger.getInstance(JujutsuWorkingCopyBaseRevision::class.java)
-                    .warn("Failed to read base content for $relativePath at $revset", e)
+                    .warn("Failed to read base content for $relativePath at $commitId", e)
                 null
             }
         }
 
         override fun getFile(): FilePath = filePath
 
-        override fun getRevisionNumber(): VcsRevisionNumber = TextRevisionNumber(revset.stringify())
+        override fun getRevisionNumber(): VcsRevisionNumber = TextRevisionNumber(commitId)
     }
 }
