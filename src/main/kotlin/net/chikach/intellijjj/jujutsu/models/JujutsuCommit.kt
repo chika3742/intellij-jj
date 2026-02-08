@@ -91,11 +91,11 @@ data class JujutsuCommit(
             committer.timestamp.toEpochMilliseconds(),
             root,
             readableShortDescription,
-            author.name,
-            author.email,
+            author.safeName,
+            author.safeEmail,
             readableDescription,
-            committer.name,
-            committer.email,
+            committer.safeName,
+            committer.safeEmail,
             author.timestamp.toEpochMilliseconds()
         )
     }

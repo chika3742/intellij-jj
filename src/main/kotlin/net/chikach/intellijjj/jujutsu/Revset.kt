@@ -1,5 +1,6 @@
 package net.chikach.intellijjj.jujutsu
 
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.vcs.log.VcsUser
 
 abstract class RevsetNode {
@@ -67,14 +68,15 @@ sealed class Revset : RevsetNode() {
         }
 
         fun author(user: VcsUser): Revset {
-            return Function("author", listOf(Symbol(user.name)))
+            return Function("author", listOf(StringLiteral(user.name)))
         }
 
         fun committer(user: VcsUser): Revset {
-            return Function("committer", listOf(Symbol(user.name)))
+            return Function("committer", listOf(StringLiteral(user.name)))
         }
 
         fun user(user: VcsUser): Revset {
+            logger<Revset>().warn(user.toString())
             return or(author(user), committer(user))
         }
 
@@ -136,6 +138,12 @@ sealed class Revset : RevsetNode() {
     private data class Symbol(val name: String) : Revset() {
         override fun stringify(): String {
             return name
+        }
+    }
+    
+    private data class StringLiteral(val string: String) : Revset() {
+        override fun stringify(): String {
+            return "\"${JujutsuTemplateUtil.escape(string)}\""
         }
     }
     

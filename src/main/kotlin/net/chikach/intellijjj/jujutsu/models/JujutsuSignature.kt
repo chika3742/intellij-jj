@@ -2,6 +2,7 @@
 
 package net.chikach.intellijjj.jujutsu.models
 
+import com.intellij.vcs.log.VcsLogObjectsFactory
 import com.intellij.vcs.log.VcsUser
 import com.intellij.vcs.log.impl.VcsUserImpl
 import kotlinx.serialization.Serializable
@@ -14,6 +15,16 @@ data class JujutsuSignature(
     val email: String,
     val timestamp: Instant
 ) {
+    val safeName: String
+        get() = name.ifBlank { "<unknown>" }
+    
+    val safeEmail: String
+        get() = email.ifBlank { "<unknown>" }
+    
     val vcsUser: VcsUser
-        get() = VcsUserImpl(name, email)
+        get() = VcsUserImpl(safeName, safeEmail)
+
+    fun getVcsUser(factory: VcsLogObjectsFactory): VcsUser {
+        return factory.createUser(safeName, safeEmail)
+    }
 }

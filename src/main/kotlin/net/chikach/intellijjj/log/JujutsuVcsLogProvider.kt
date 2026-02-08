@@ -74,7 +74,7 @@ class JujutsuVcsLogProvider(
             
             return object : VcsLogProvider.LogData {
                 override fun getRefs(): MutableSet<VcsRef> = extractBookmarksForCommits(commits, root)
-                override fun getUsers(): MutableSet<VcsUser> = mutableSetOf()
+                override fun getUsers(): MutableSet<VcsUser> = extractUsersForCommits(commits)
             }
         } catch (e: Exception) {
             LOG.error("Failed to read all hashes", e)
@@ -336,6 +336,15 @@ class JujutsuVcsLogProvider(
                 }
             } else null
         }.flatten().toMutableSet()
+    }
+    
+    private fun extractUsersForCommits(commits: List<JujutsuCommit>): MutableSet<VcsUser> {
+        return commits.flatMap { commit ->
+            listOf(
+                commit.author.getVcsUser(vcsObjectsFactory),
+                commit.committer.getVcsUser(vcsObjectsFactory)
+            )
+        }.toMutableSet()
     }
     
     private class JujutsuContentRevision(
