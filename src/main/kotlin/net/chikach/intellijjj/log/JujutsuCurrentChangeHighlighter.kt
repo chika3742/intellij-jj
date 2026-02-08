@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 package net.chikach.intellijjj.log
 
 import com.intellij.openapi.application.ApplicationManager
@@ -16,9 +18,9 @@ import com.intellij.vcs.log.ui.VcsLogUiEx
 import com.intellij.vcs.log.ui.highlighters.VcsLogHighlighterFactory
 import com.intellij.vcs.log.ui.table.VcsLogGraphTable
 import net.chikach.intellijjj.JujutsuVcsUtil
-import net.chikach.intellijjj.commands.JujutsuCommandExecutor
-import net.chikach.intellijjj.commands.JujutsuLogCommand
-import net.chikach.intellijjj.commands.Revset
+import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
+import net.chikach.intellijjj.jujutsu.commands.JujutsuLogCommand
+import net.chikach.intellijjj.jujutsu.Revset
 import java.awt.Color
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger

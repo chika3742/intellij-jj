@@ -1,8 +1,10 @@
-package net.chikach.intellijjj.commands
+package net.chikach.intellijjj.jujutsu.commands
 
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.serialization.json.Json
+import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
+import net.chikach.intellijjj.jujutsu.Revset
 import net.chikach.intellijjj.jujutsu.models.JujutsuCommit
 
 class JujutsuLogCommand(private val commandExecutor: JujutsuCommandExecutor) {

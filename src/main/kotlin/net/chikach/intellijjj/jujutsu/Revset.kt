@@ -1,4 +1,4 @@
-package net.chikach.intellijjj.commands
+package net.chikach.intellijjj.jujutsu
 
 import com.intellij.vcs.log.VcsUser
 

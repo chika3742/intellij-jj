@@ -13,9 +13,8 @@ import com.intellij.openapi.vcs.history.VcsHistoryProvider
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment
 import com.intellij.openapi.vcs.update.UpdateEnvironment
 import com.intellij.util.messages.MessageBusConnection
-import net.chikach.intellijjj.commands.JujutsuCommandExecutor
 import net.chikach.intellijjj.commit.JujutsuCheckinEnvironment
-import net.chikach.intellijjj.diff.JujutsuDiffProvider
+import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
 import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
 
 class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {

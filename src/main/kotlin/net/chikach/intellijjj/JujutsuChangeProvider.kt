@@ -16,7 +16,7 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScope
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
-import net.chikach.intellijjj.commands.Revset
+import net.chikach.intellijjj.jujutsu.Revset
 import net.chikach.intellijjj.jujutsu.JujutsuDiffParser
 import java.nio.file.Paths
 

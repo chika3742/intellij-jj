@@ -1,4 +1,4 @@
-package net.chikach.intellijjj.commands
+package net.chikach.intellijjj.jujutsu
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.ide.progress.runWithModalProgressBlocking
+import net.chikach.intellijjj.jujutsu.commands.JujutsuLogCommand
 import java.nio.charset.StandardCharsets
 
 class JujutsuCommandExecutor(private val project: Project) {

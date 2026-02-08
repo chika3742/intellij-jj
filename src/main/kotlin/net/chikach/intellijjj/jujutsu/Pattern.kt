@@ -1,6 +1,4 @@
-package net.chikach.intellijjj.commands
-
-import net.chikach.intellijjj.jujutsu.JujutsuTemplateUtil
+package net.chikach.intellijjj.jujutsu
 
 sealed class Pattern : RevsetNode() {
     data class PatternExpression(val type: String, val text: String, val caseSensitive: Boolean): Pattern() {

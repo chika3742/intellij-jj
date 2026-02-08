@@ -19,9 +19,9 @@ import com.intellij.vcs.log.impl.HashImpl
 import com.intellij.vcs.log.impl.VcsUserImpl
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcsUtil
-import net.chikach.intellijjj.commands.JujutsuCommandExecutor
-import net.chikach.intellijjj.commands.JujutsuLogCommand
-import net.chikach.intellijjj.commands.Revset
+import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
+import net.chikach.intellijjj.jujutsu.commands.JujutsuLogCommand
+import net.chikach.intellijjj.jujutsu.Revset
 import net.chikach.intellijjj.jujutsu.JujutsuDiffParser
 import net.chikach.intellijjj.jujutsu.models.JujutsuCommit
 import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener

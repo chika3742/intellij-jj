@@ -1,4 +1,4 @@
-package net.chikach.intellijjj.diff
+package net.chikach.intellijjj
 
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
@@ -12,8 +12,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
-import net.chikach.intellijjj.JujutsuVcs
-import net.chikach.intellijjj.commands.Revset
+import net.chikach.intellijjj.jujutsu.Revset
 
 class JujutsuDiffProvider(
     private val project: Project,

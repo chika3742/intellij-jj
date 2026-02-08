@@ -1,7 +1,7 @@
 package net.chikach.intellijjj
 
 import kotlinx.serialization.json.Json
-import net.chikach.intellijjj.commands.Revset
+import net.chikach.intellijjj.jujutsu.Revset
 import net.chikach.intellijjj.jujutsu.models.JujutsuCommit
 import kotlin.test.Test
 import kotlin.test.assertEquals

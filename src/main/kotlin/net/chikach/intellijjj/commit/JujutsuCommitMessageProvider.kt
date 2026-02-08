@@ -21,7 +21,7 @@ import com.intellij.vcs.commit.DelayedCommitMessageProvider
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcs
 import net.chikach.intellijjj.JujutsuVcsUtil
-import net.chikach.intellijjj.commands.Revset
+import net.chikach.intellijjj.jujutsu.Revset
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
