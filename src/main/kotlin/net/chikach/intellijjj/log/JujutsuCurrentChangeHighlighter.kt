@@ -19,8 +19,6 @@ import com.intellij.vcs.log.ui.highlighters.VcsLogHighlighterFactory
 import com.intellij.vcs.log.ui.table.VcsLogGraphTable
 import net.chikach.intellijjj.JujutsuVcsUtil
 import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
-import net.chikach.intellijjj.jujutsu.commands.JujutsuLogCommand
-import net.chikach.intellijjj.jujutsu.Revset
 import java.awt.Color
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -35,7 +33,7 @@ class JujutsuCurrentChangeHighlighter(
 ) : VcsLogHighlighter {
     private val log = Logger.getInstance(JujutsuCurrentChangeHighlighter::class.java)
     private val commandExecutor = JujutsuCommandExecutor(logData.project)
-    private val logCommand = JujutsuLogCommand(commandExecutor)
+    private val showCommand = commandExecutor.showCommand
     private val currentCommitByRoot = ConcurrentHashMap<VirtualFile, String>()
     private val updateCounter = AtomicInteger(0)
 
@@ -90,7 +88,7 @@ class JujutsuCurrentChangeHighlighter(
 
     private fun readWorkingCopyCommitId(root: VirtualFile): String? {
         return try {
-            logCommand.readFirstNonBlankLine(root, "commit_id", Revset.WORKING_COPY)
+            showCommand.getWorkingCopyCommitId(root)
         } catch (e: Exception) {
             log.warn("Failed to read working copy commit id for ${root.path}", e)
             null

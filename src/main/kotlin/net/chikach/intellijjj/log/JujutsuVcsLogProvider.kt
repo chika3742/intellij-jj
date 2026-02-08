@@ -42,11 +42,8 @@ class JujutsuVcsLogProvider(
     private val LOG = Logger.getInstance(JujutsuVcsLogProvider::class.java)
     private val commandExecutor = JujutsuCommandExecutor(project)
     private val logCommand = commandExecutor.logCommand
+    private val showCommand = commandExecutor.showCommand
     private val vcsObjectsFactory = project.getService(VcsLogObjectsFactory::class.java)
-    
-    companion object {
-        private const val NO_BOOKMARKS_OUTPUT = "(no bookmarks)"
-    }
 
     override fun readFirstBlock(
         root: VirtualFile,
@@ -140,15 +137,13 @@ class JujutsuVcsLogProvider(
     override fun getContainingBranches(root: VirtualFile, commitHash: Hash): Collection<String> {
         return try {
             // Jujutsu uses "bookmarks" instead of branches
-            val output = logCommand.executeWithTemplate(
+            logCommand.getBookmarks(
                 root,
-                "bookmarks ++ \"\n\"",
                 Revset.and(
                     Revset.bookmarks(),
                     Revset.rangeWithRoot(to = Revset.commitId(commitHash.asString())),
                 ),
             )
-            output.trim().lines().toSet()
         } catch (e: Exception) {
             LOG.warn("Failed to get containing branches for ${commitHash.asString()}", e)
             emptyList()
@@ -162,11 +157,7 @@ class JujutsuVcsLogProvider(
     override fun getCurrentBranch(root: VirtualFile): String? {
         return try {
             // In Jujutsu, we can check for the current bookmark(s)
-            val output = logCommand.executeWithTemplate(root, "bookmarks", Revset.WORKING_COPY)
-            val bookmarks = output.trim()
-            if (bookmarks.isNotEmpty() && bookmarks != NO_BOOKMARKS_OUTPUT) {
-                bookmarks.split(",").firstOrNull()?.trim()
-            } else null
+            showCommand.getBookmarks(root).firstOrNull()
         } catch (e: Exception) {
             LOG.warn("Failed to get current branch", e)
             null
@@ -278,6 +269,10 @@ class JujutsuVcsLogProvider(
      */
     private fun readCommitsForHashes(root: VirtualFile, hashes: List<String>): List<JujutsuCommit> {
         if (hashes.isEmpty()) return emptyList()
+        if (hashes.size == 1) {
+            val commit = readCommitForHash(root, hashes.first())
+            return if (commit != null) listOf(commit) else emptyList()
+        }
 
         val revset = Revset.or(hashes.map { Revset.commitId(it) })
         return try {
@@ -287,7 +282,7 @@ class JujutsuVcsLogProvider(
             val commits = mutableListOf<JujutsuCommit>()
             hashes.forEach { hash ->
                 try {
-                    logCommand.getCommits(root, revset)
+                    readCommitForHash(root, hash)?.let { commits.add(it) }
                 } catch (inner: Exception) {
                     LOG.warn("Failed to read commit $hash", inner)
                 }
@@ -324,7 +319,7 @@ class JujutsuVcsLogProvider(
 
     private fun readCommitForHash(root: VirtualFile, hash: String): JujutsuCommit? {
         return try {
-            logCommand.getCommits(root, Revset.commitId(hash)).firstOrNull()
+            showCommand.getCommit(root, Revset.commitId(hash))
         } catch (e: Exception) {
             LOG.warn("Failed to read commit metadata for $hash", e)
             null

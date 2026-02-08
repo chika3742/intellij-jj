@@ -63,7 +63,7 @@ class JujutsuDiffProvider(
 
     private fun readWorkingCopyCommitId(root: VirtualFile): String? {
         return try {
-            vcs.commandExecutor.logCommand.readFirstNonBlankLine(root, "commit_id", Revset.WORKING_COPY)
+            vcs.commandExecutor.showCommand.getWorkingCopyCommitId(root)
         } catch (e: VcsException) {
             log.warn("Failed to read working copy commit id for ${root.path}", e)
             null

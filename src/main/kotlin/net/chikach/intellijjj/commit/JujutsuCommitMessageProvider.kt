@@ -21,7 +21,6 @@ import com.intellij.vcs.commit.DelayedCommitMessageProvider
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcs
 import net.chikach.intellijjj.JujutsuVcsUtil
-import net.chikach.intellijjj.jujutsu.Revset
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -93,13 +92,7 @@ class JujutsuCommitMessageProvider : CommitMessageProvider, DelayedCommitMessage
 
         val root = findRootForDescription(project, vcsManager, changeList) ?: return null
         return try {
-            val output = vcs.commandExecutor.logCommand.executeWithTemplate(
-                root,
-                "description",
-                revset = Revset.WORKING_COPY,
-            )
-            val message = output.trimEnd()
-            message.ifBlank { null }
+            vcs.commandExecutor.showCommand.getDescription(root)
         } catch (e: Exception) {
             log.warn("Failed to read current change description", e)
             null

@@ -1,6 +1,5 @@
 package net.chikach.intellijjj.jujutsu.commands
 
-import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.serialization.json.Json
 import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
@@ -11,8 +10,6 @@ import net.chikach.intellijjj.jujutsu.models.JujutsuCommit
  * Wrapper for `jj log` queries used by change, diff, and VCS log integrations.
  */
 class JujutsuLogCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuCommand(commandExecutor) {
-    val log = logger<JujutsuLogCommand>()
-    
     private fun execute(
         root: VirtualFile,
         template: String,
@@ -36,7 +33,7 @@ class JujutsuLogCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuComman
     /**
      * Executes `jj log` with an arbitrary template and optional revset/limit.
      */
-    fun executeWithTemplate(
+    private fun executeWithTemplate(
         root: VirtualFile,
         template: String,
         revset: Revset? = null,
@@ -63,20 +60,17 @@ class JujutsuLogCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuComman
     }
 
     /**
-     * Reads the first non-empty line from a template output.
+     * Reads bookmark names for commits selected by a revset.
      */
-    fun readFirstNonBlankLine(
+    fun getBookmarks(
         root: VirtualFile,
-        template: String,
-        revset: Revset? = null,
-    ): String? {
-        val output = executeWithTemplate(
-            root,
-            template,
-            revset,
-        )
+        revset: Revset,
+        limit: Int? = null,
+    ): Set<String> {
+        val output = executeWithTemplate(root, "bookmarks ++ \"\\n\"", revset, limit)
         return output.lineSequence()
             .map { it.trim() }
-            .firstOrNull { it.isNotEmpty() }
+            .filter { it.isNotEmpty() }
+            .toSet()
     }
 }
