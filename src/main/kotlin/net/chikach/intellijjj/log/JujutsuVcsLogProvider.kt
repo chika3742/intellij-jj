@@ -20,12 +20,14 @@ import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcsUtil
 import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
 import net.chikach.intellijjj.jujutsu.commands.JujutsuLogCommand
+import net.chikach.intellijjj.jujutsu.Pattern
 import net.chikach.intellijjj.jujutsu.Revset
 import net.chikach.intellijjj.jujutsu.JujutsuDiffParser
 import net.chikach.intellijjj.jujutsu.models.JujutsuCommit
 import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
 import net.chikach.intellijjj.repo.JujutsuRepositoryWatcher
 import java.io.File
+import java.time.Instant
 import kotlin.time.ExperimentalTime
 
 class JujutsuVcsLogProvider(
@@ -204,14 +206,15 @@ class JujutsuVcsLogProvider(
         val userFilter = filterCollection.get(VcsLogFilterCollection.USER_FILTER)
         val structureFilter = filterCollection.get(VcsLogFilterCollection.STRUCTURE_FILTER)
         val textFilter = filterCollection.get(VcsLogFilterCollection.TEXT_FILTER)
+        val dateFilter = filterCollection.get(VcsLogFilterCollection.DATE_FILTER)
 
         var revset: Revset = Revset.ALL
 
         if (textFilter != null) {
             val pattern = if (textFilter.isRegex) {
-                Revset.regex(textFilter.text, textFilter.matchesCase())
+                Pattern.regex(textFilter.text, textFilter.matchesCase())
             } else {
-                Revset.substring(textFilter.text, textFilter.matchesCase())
+                Pattern.substring(textFilter.text, textFilter.matchesCase())
             }
             revset = Revset.and(
                 revset,
@@ -241,17 +244,34 @@ class JujutsuVcsLogProvider(
                 val filePath = FileUtil.toSystemIndependentName(file.path)
                 val relativePath = FileUtil.getRelativePath(rootPath, filePath, '/')
                     ?: return@mapNotNull null
-                Revset.root(relativePath)
+                Pattern.root(relativePath)
             }
-            revset = Revset.and(
-                revset,
-                Revset.files(Revset.or(pathPatterns))
-            )
+            if (pathPatterns.isNotEmpty()) {
+                revset = Revset.and(
+                    revset,
+                    Revset.files(Pattern.or(pathPatterns))
+                )
+            }
         }
 
-        val filtered = logCommand.getCommits(root, revset, maxCount)
-        
-        return filtered.map { it.toTimedCommit(vcsObjectsFactory) }
+        if (dateFilter != null) {
+            val datePatterns = mutableListOf<Pattern>()
+            dateFilter.after?.time?.let { afterMillis ->
+                val afterString = Instant.ofEpochMilli(afterMillis).toString()
+                datePatterns.add(Pattern.dateAfter(afterString))
+            }
+            dateFilter.before?.time?.let { beforeMillis ->
+                val inclusiveBeforeMillis = if (beforeMillis < Long.MAX_VALUE) beforeMillis + 1 else beforeMillis
+                val beforeString = Instant.ofEpochMilli(inclusiveBeforeMillis).toString()
+                datePatterns.add(Pattern.dateBefore(beforeString))
+            }
+            if (datePatterns.isNotEmpty()) {
+                revset = Revset.and(revset, Revset.committerDate(Pattern.and(datePatterns)))
+            }
+        }
+
+        val commits = logCommand.getCommits(root, revset, maxCount)
+        return commits.map { it.toTimedCommit(vcsObjectsFactory) }
     }
     
     private fun readCommitsForHashes(root: VirtualFile, hashes: List<String>): List<JujutsuCommit> {

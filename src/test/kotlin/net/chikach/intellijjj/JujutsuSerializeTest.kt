@@ -1,7 +1,7 @@
 package net.chikach.intellijjj
 
 import kotlinx.serialization.json.Json
-import net.chikach.intellijjj.jujutsu.Revset
+import net.chikach.intellijjj.jujutsu.Pattern
 import net.chikach.intellijjj.jujutsu.models.JujutsuCommit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,10 +43,12 @@ class JujutsuSerializeTest {
     
     @Test
     fun canStringifyRevsetPattern() {
-        val pattern = Revset.or(listOf(
-            Revset.root("src/main/kotlin"),
-            Revset.root("src/main/java"),
-        ))
+        val pattern = Pattern.or(
+            listOf(
+                Pattern.root("src/main/kotlin"),
+                Pattern.root("src/main/java"),
+            )
+        )
         assertEquals( "root-file:\"src/main/kotlin\" | root-file:\"src/main/java\"", pattern.stringify())
     }
 }

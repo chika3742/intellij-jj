@@ -47,13 +47,6 @@ sealed class Revset : RevsetNode() {
         }
 
         /**
-         * Creates an OR revset for the provided list.
-         */
-        fun or(patterns: List<Pattern>): Pattern {
-            return Pattern.PatternOperator("|", Pattern.OperatorType.INFIX, patterns)
-        }
-
-        /**
          * Creates an OR revset.
          */
         fun or(a: Revset, b: Revset): Revset {
@@ -85,27 +78,6 @@ sealed class Revset : RevsetNode() {
         }
 
         /**
-         * Substring string pattern.
-         */
-        fun substring(text: String, caseSensitive: Boolean = true): Pattern {
-            return Pattern.PatternExpression("substring", text, caseSensitive)
-        }
-
-        /**
-         * Regex string pattern.
-         */
-        fun regex(regex: String, caseSensitive: Boolean = true): Pattern {
-            return Pattern.PatternExpression("regex", regex, caseSensitive)
-        }
-
-        /**
-         * File pattern matches workspace-relative file (or exact) path.
-         */
-        fun root(query: String, caseSensitive: Boolean = true): Pattern {
-            return Pattern.PatternExpression("root", query, caseSensitive)
-        }
-
-        /**
          * Creates a revset that matches bookmarks.
          */
         fun bookmarks(): Revset {
@@ -132,6 +104,10 @@ sealed class Revset : RevsetNode() {
          */
         fun description(pattern: RevsetNode): Revset {
             return Function("description", listOf(pattern))
+        }
+
+        fun committerDate(pattern: Pattern): Revset {
+            return Function("committer_date", listOf(pattern))
         }
     }
     
