@@ -86,7 +86,7 @@ class JujutsuCurrentChangeHighlighter(
 
     private fun readWorkingCopyCommitId(root: VirtualFile): String? {
         return try {
-            logCommand.readFirstNonBlankLine(root, "commit_id", Revset.WORKING_COPY, noGraph = true)
+            logCommand.readFirstNonBlankLine(root, "commit_id", Revset.WORKING_COPY)
         } catch (e: Exception) {
             log.warn("Failed to read working copy commit id for ${root.path}", e)
             null

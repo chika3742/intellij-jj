@@ -7,7 +7,7 @@ import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
 import net.chikach.intellijjj.jujutsu.Revset
 import net.chikach.intellijjj.jujutsu.models.JujutsuCommit
 
-class JujutsuLogCommand(private val commandExecutor: JujutsuCommandExecutor) {
+class JujutsuLogCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuCommand(commandExecutor) {
     val log = logger<JujutsuLogCommand>()
     
     private fun execute(
@@ -15,16 +15,8 @@ class JujutsuLogCommand(private val commandExecutor: JujutsuCommandExecutor) {
         template: String,
         revset: Revset?,
         limit: Int?,
-        noGraph: Boolean,
-        noColor: Boolean,
     ): String {
-        val args = mutableListOf("log", "--quiet")
-        if (noGraph) {
-            args.add("--no-graph")
-        }
-        if (noColor) {
-            args.add("--color=never")
-        }
+        val args = mutableListOf("log", "--quiet", "--no-graph", "--color=never")
         if (revset != null) {
             args.add("-r")
             args.add(revset.stringify())
@@ -35,7 +27,7 @@ class JujutsuLogCommand(private val commandExecutor: JujutsuCommandExecutor) {
         }
         args.add("-T")
         args.add(template)
-        return commandExecutor.executeAndCheck(root, *args.toTypedArray())
+        return execute(root, args)
     }
     
     fun executeWithTemplate(
@@ -43,10 +35,8 @@ class JujutsuLogCommand(private val commandExecutor: JujutsuCommandExecutor) {
         template: String,
         revset: Revset? = null,
         limit: Int? = null,
-        noGraph: Boolean = true,
-        noColor: Boolean = true
     ): String {
-        return execute(root, template, revset, limit, noGraph, noColor)
+        return execute(root, template, revset, limit)
     }
 
     fun getCommits(root: VirtualFile, revset: Revset? = null, limit: Int? = null): List<JujutsuCommit> {
@@ -67,15 +57,11 @@ class JujutsuLogCommand(private val commandExecutor: JujutsuCommandExecutor) {
         root: VirtualFile,
         template: String,
         revset: Revset? = null,
-        noGraph: Boolean = false,
-        noColor: Boolean = true,
     ): String? {
         val output = executeWithTemplate(
             root,
             template,
             revset,
-            noGraph = noGraph,
-            noColor = noColor
         )
         return output.lineSequence()
             .map { it.trim() }

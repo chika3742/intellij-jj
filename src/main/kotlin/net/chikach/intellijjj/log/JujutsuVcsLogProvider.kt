@@ -148,7 +148,6 @@ class JujutsuVcsLogProvider(
                     Revset.bookmarks(),
                     Revset.rangeWithRoot(to = Revset.commitId(commitHash.asString())),
                 ),
-                noGraph = true
             )
             output.trim().lines().toSet()
         } catch (e: Exception) {
@@ -164,7 +163,7 @@ class JujutsuVcsLogProvider(
     override fun getCurrentBranch(root: VirtualFile): String? {
         return try {
             // In Jujutsu, we can check for the current bookmark(s)
-            val output = logCommand.executeWithTemplate(root, "bookmarks", Revset.WORKING_COPY, noGraph = true)
+            val output = logCommand.executeWithTemplate(root, "bookmarks", Revset.WORKING_COPY)
             val bookmarks = output.trim()
             if (bookmarks.isNotEmpty() && bookmarks != NO_BOOKMARKS_OUTPUT) {
                 bookmarks.split(",").firstOrNull()?.trim()
