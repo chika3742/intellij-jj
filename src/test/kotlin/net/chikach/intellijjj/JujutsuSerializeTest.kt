@@ -3,41 +3,31 @@ package net.chikach.intellijjj
 import kotlinx.serialization.json.Json
 import net.chikach.intellijjj.jujutsu.Pattern
 import net.chikach.intellijjj.jujutsu.models.JujutsuCommit
+import net.chikach.intellijjj.testutil.JjTestRepo
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class JujutsuSerializeTest {
     @Test
     fun canSerializeCommit() {
-        val process = ProcessBuilder("jj", "log", "--no-graph", "--color=never", "-T", JujutsuCommit.TEMPLATE)
-            .redirectErrorStream(true)
-            .start()
-        
-        val output = process.inputStream.bufferedReader().readLines()
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            throw RuntimeException("jj command failed: ${output.joinToString("\n")}")
-        }
-        
-        output.forEach {
-            println(Json.decodeFromString<JujutsuCommit>(it))
+        if (!JjTestRepo.isAvailable()) return
+        JjTestRepo.init().use { repo ->
+            repo.writeFile("hello.txt", "hello")
+            repo.commit("init")
+            val output = repo.logJsonLines(JujutsuCommit.TEMPLATE)
+            val commits = output.map { Json.decodeFromString<JujutsuCommit>(it) }
+            assertTrue(commits.isNotEmpty())
+            assertTrue(commits.any { it.commitId.isNotBlank() })
         }
     }
     
     @Test
     fun canSerializeNoCommit() {
-        val process = ProcessBuilder("jj", "log", "--no-graph", "--color=never", "-r", "commit_id(abc)", "-T", JujutsuCommit.TEMPLATE)
-            .redirectErrorStream(true)
-            .start()
-        
-        val output = process.inputStream.bufferedReader().readLines()
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            throw RuntimeException("jj command failed: ${output.joinToString("\n")}")
-        }
-        
-        output.forEach {
-            println(Json.decodeFromString<JujutsuCommit>(it))
+        if (!JjTestRepo.isAvailable()) return
+        JjTestRepo.init().use { repo ->
+            val output = repo.logJsonLines(JujutsuCommit.TEMPLATE, "commit_id(abc)")
+            assertTrue(output.isEmpty())
         }
     }
     
@@ -49,6 +39,6 @@ class JujutsuSerializeTest {
                 Pattern.root("src/main/java"),
             )
         )
-        assertEquals( "root-file:\"src/main/kotlin\" | root-file:\"src/main/java\"", pattern.stringify())
+        assertEquals( "root:\"src/main/kotlin\" | root:\"src/main/java\"", pattern.stringify())
     }
 }

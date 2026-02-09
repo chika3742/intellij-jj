@@ -40,10 +40,14 @@ class JujutsuVcsLogProvider(
 ) : VcsLogProvider {
 
     private val LOG = Logger.getInstance(JujutsuVcsLogProvider::class.java)
-    private val commandExecutor = JujutsuCommandExecutor(project)
-    private val logCommand = commandExecutor.logCommand
-    private val showCommand = commandExecutor.showCommand
-    private val bookmarkCommand = commandExecutor.bookmarkCommand
+    private val commandExecutor: JujutsuCommandExecutor
+        get() = JujutsuVcsUtil.getCommandExecutor(project)
+    private val logCommand
+        get() = commandExecutor.logCommand
+    private val showCommand
+        get() = commandExecutor.showCommand
+    private val bookmarkCommand
+        get() = commandExecutor.bookmarkCommand
     private val vcsObjectsFactory = project.getService(VcsLogObjectsFactory::class.java)
 
     override fun readFirstBlock(

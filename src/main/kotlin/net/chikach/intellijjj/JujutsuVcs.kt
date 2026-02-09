@@ -36,9 +36,10 @@ class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
     private val historyProvider = JujutsuHistoryProvider(project, this)
     private val integrateEnvironment = JujutsuUpdateEnvironment("Integrate")
     private val updateEnvironment = JujutsuUpdateEnvironment("Update")
-    val commandExecutor = JujutsuCommandExecutor(project)
     private val dirtyScopeManager = VcsDirtyScopeManager.getInstance(project)
-    
+
+    val commandExecutor = JujutsuCommandExecutor(project)
+
     private var repoChangeListenerConnection: MessageBusConnection? = null
 
     override fun activate() {

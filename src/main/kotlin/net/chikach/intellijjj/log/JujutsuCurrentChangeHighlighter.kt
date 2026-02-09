@@ -28,12 +28,14 @@ import java.util.concurrent.atomic.AtomicInteger
  * repository root in the VCS Log table.
  */
 class JujutsuCurrentChangeHighlighter(
-    logData: VcsLogData,
+    private val logData: VcsLogData,
     private val logUi: VcsLogUi
 ) : VcsLogHighlighter {
     private val log = Logger.getInstance(JujutsuCurrentChangeHighlighter::class.java)
-    private val commandExecutor = JujutsuCommandExecutor(logData.project)
-    private val showCommand = commandExecutor.showCommand
+    private val commandExecutor: JujutsuCommandExecutor
+        get() = JujutsuVcsUtil.getCommandExecutor(logData.project)
+    private val showCommand
+        get() = commandExecutor.showCommand
     private val currentCommitByRoot = ConcurrentHashMap<VirtualFile, String>()
     private val updateCounter = AtomicInteger(0)
 
