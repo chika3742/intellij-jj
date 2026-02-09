@@ -59,18 +59,4 @@ class JujutsuLogCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuComman
         return result.lines().map { Json.decodeFromString<JujutsuCommit>(it.trim()) }
     }
 
-    /**
-     * Reads bookmark names for commits selected by a revset.
-     */
-    fun getBookmarks(
-        root: VirtualFile,
-        revset: Revset,
-        limit: Int? = null,
-    ): Set<String> {
-        val output = executeWithTemplate(root, "bookmarks ++ \"\\n\"", revset, limit)
-        return output.lineSequence()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .toSet()
-    }
 }

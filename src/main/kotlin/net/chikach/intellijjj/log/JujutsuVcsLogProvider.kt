@@ -43,6 +43,7 @@ class JujutsuVcsLogProvider(
     private val commandExecutor = JujutsuCommandExecutor(project)
     private val logCommand = commandExecutor.logCommand
     private val showCommand = commandExecutor.showCommand
+    private val bookmarkCommand = commandExecutor.bookmarkCommand
     private val vcsObjectsFactory = project.getService(VcsLogObjectsFactory::class.java)
 
     override fun readFirstBlock(
@@ -137,12 +138,9 @@ class JujutsuVcsLogProvider(
     override fun getContainingBranches(root: VirtualFile, commitHash: Hash): Collection<String> {
         return try {
             // Jujutsu uses "bookmarks" instead of branches
-            logCommand.getBookmarks(
+            bookmarkCommand.getBookmarks(
                 root,
-                Revset.and(
-                    Revset.bookmarks(),
-                    Revset.rangeWithRoot(to = Revset.commitId(commitHash.asString())),
-                ),
+                Revset.rangeWithRoot(from = Revset.commitId(commitHash.asString())),
             )
         } catch (e: Exception) {
             LOG.warn("Failed to get containing branches for ${commitHash.asString()}", e)
@@ -155,13 +153,7 @@ class JujutsuVcsLogProvider(
     }
     
     override fun getCurrentBranch(root: VirtualFile): String? {
-        return try {
-            // In Jujutsu, we can check for the current bookmark(s)
-            showCommand.getBookmarks(root).firstOrNull()
-        } catch (e: Exception) {
-            LOG.warn("Failed to get current branch", e)
-            null
-        }
+        return null // Jujutsu does not have a concept of the current branch in the same way as Git
     }
 
     override fun getReferenceManager(): VcsLogRefManager {

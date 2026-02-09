@@ -14,6 +14,7 @@ import net.chikach.intellijjj.jujutsu.commands.JujutsuConfigCommand
 import net.chikach.intellijjj.jujutsu.commands.JujutsuDiffCommand
 import net.chikach.intellijjj.jujutsu.commands.JujutsuFileCommand
 import net.chikach.intellijjj.jujutsu.commands.JujutsuLogCommand
+import net.chikach.intellijjj.jujutsu.commands.JujutsuBookmarkCommand
 import net.chikach.intellijjj.jujutsu.commands.JujutsuShowCommand
 import java.nio.charset.StandardCharsets
 
@@ -31,6 +32,7 @@ class JujutsuCommandExecutor(private val project: Project) {
 
     private val log = logger<JujutsuCommandExecutor>()
     val logCommand = JujutsuLogCommand(this)
+    val bookmarkCommand = JujutsuBookmarkCommand(this)
     val showCommand = JujutsuShowCommand(this)
     val fileCommand = JujutsuFileCommand(this)
     val diffCommand = JujutsuDiffCommand(this)

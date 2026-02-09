@@ -10,10 +10,6 @@ import net.chikach.intellijjj.jujutsu.models.JujutsuCommit
  * Wrapper for `jj show` queries targeting a single revision.
  */
 class JujutsuShowCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuCommand(commandExecutor) {
-    companion object {
-        private const val NO_BOOKMARKS_OUTPUT = "(no bookmarks)"
-    }
-
     private fun execute(
         root: VirtualFile,
         template: String,
@@ -73,18 +69,5 @@ class JujutsuShowCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuComma
     fun getDescription(root: VirtualFile, revset: Revset? = null): String? {
         val description = executeWithTemplate(root, "description", revset).trimEnd()
         return description.ifBlank { null }
-    }
-
-    /**
-     * Reads bookmark names from a single revision.
-     */
-    fun getBookmarks(root: VirtualFile, revset: Revset? = null): List<String> {
-        val output = executeWithTemplate(root, "bookmarks", revset).trim()
-        if (output.isEmpty() || output == NO_BOOKMARKS_OUTPUT) {
-            return emptyList()
-        }
-        return output.split(",")
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
     }
 }
