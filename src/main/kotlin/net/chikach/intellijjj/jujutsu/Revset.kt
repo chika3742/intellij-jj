@@ -109,6 +109,10 @@ sealed class Revset : RevsetNode() {
         fun committerDate(pattern: Pattern): Revset {
             return Function("committer_date", listOf(pattern))
         }
+
+        fun connected(revset: Revset): Revset {
+            return Function("connected", listOf(revset))
+        }
     }
     
     private data class Symbol(val name: String) : Revset() {

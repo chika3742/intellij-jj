@@ -14,7 +14,7 @@ import kotlinx.serialization.json.JsonNames
 @JsonIgnoreUnknownKeys
 class JujutsuCommitRef(
     val name: String,
-    val target: List<String>,
+    val target: List<String?>,
     val remote: String? = null,
     @JsonNames("tracking_target")
     val trackingTarget: List<String>? = null,

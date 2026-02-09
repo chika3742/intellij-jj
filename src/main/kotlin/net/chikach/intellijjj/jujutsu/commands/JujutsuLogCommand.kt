@@ -49,7 +49,7 @@ class JujutsuLogCommand(commandExecutor: JujutsuCommandExecutor) : JujutsuComman
         val result = executeWithTemplate(
             root,
             JujutsuCommit.TEMPLATE,
-            revset,
+            Revset.connected(revset ?: Revset.rangeWithRoot()),
             limit,
         ).trim()
         
