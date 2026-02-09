@@ -14,8 +14,11 @@ import com.intellij.openapi.vcs.rollback.RollbackEnvironment
 import com.intellij.openapi.vcs.update.UpdateEnvironment
 import com.intellij.util.messages.MessageBusConnection
 import net.chikach.intellijjj.commit.JujutsuCheckinEnvironment
+import net.chikach.intellijjj.history.JujutsuHistoryProvider
 import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
 import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
+import net.chikach.intellijjj.rollback.JujutsuRollbackEnvironment
+import net.chikach.intellijjj.update.JujutsuUpdateEnvironment
 
 /**
  * IntelliJ VCS entry point for the Jujutsu integration.
@@ -29,6 +32,10 @@ class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
     private val changeProvider = JujutsuChangeProvider(project, this)
     private val diffProvider = JujutsuDiffProvider(project, this)
     private val checkinEnvironment = JujutsuCheckinEnvironment(project, this)
+    private val rollbackEnvironment = JujutsuRollbackEnvironment(project, this)
+    private val historyProvider = JujutsuHistoryProvider(project, this)
+    private val integrateEnvironment = JujutsuUpdateEnvironment("Integrate")
+    private val updateEnvironment = JujutsuUpdateEnvironment("Update")
     val commandExecutor = JujutsuCommandExecutor(project)
     private val dirtyScopeManager = VcsDirtyScopeManager.getInstance(project)
     
@@ -61,23 +68,15 @@ class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
 
     override fun getCheckinEnvironment(): CheckinEnvironment = checkinEnvironment
 
-    override fun getRollbackEnvironment(): RollbackEnvironment? {
-        return null
-    }
+    override fun getRollbackEnvironment(): RollbackEnvironment = rollbackEnvironment
 
     override fun getDiffProvider(): DiffProvider = diffProvider
 
-    override fun getVcsHistoryProvider(): VcsHistoryProvider? {
-        return null
-    }
+    override fun getVcsHistoryProvider(): VcsHistoryProvider = historyProvider
 
-    override fun getIntegrateEnvironment(): UpdateEnvironment? {
-        return null
-    }
+    override fun getIntegrateEnvironment(): UpdateEnvironment = integrateEnvironment
 
-    override fun getUpdateEnvironment(): UpdateEnvironment? {
-        return null
-    }
+    override fun getUpdateEnvironment(): UpdateEnvironment = updateEnvironment
 
     companion object {
         const val VCS_NAME = "Jujutsu"
