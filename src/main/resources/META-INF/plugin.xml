@@ -35,6 +35,7 @@
 
         <vcs.commitMessageProvider implementation="net.chikach.intellijjj.commit.JujutsuCommitMessageProvider"/>
         <vcsRootChecker implementation="net.chikach.intellijjj.JujutsuVcsRootChecker"/>
+        <postStartupActivity implementation="net.chikach.intellijjj.JujutsuIgnoredFilesProjectActivity"/>
     </extensions>
 
     <actions>
