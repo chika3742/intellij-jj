@@ -16,8 +16,10 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScope
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
+import com.intellij.openapi.options.advanced.AdvancedSettings
 import net.chikach.intellijjj.jujutsu.Revset
 import net.chikach.intellijjj.jujutsu.JujutsuDiffParser
+import net.chikach.intellijjj.git.GitIgnoreScanner
 import java.nio.file.Paths
 
 /**
@@ -28,6 +30,7 @@ class JujutsuChangeProvider(
     private val project: Project,
     private val vcs: JujutsuVcs
 ) : ChangeProvider {
+    private val gitIgnoreScanner = GitIgnoreScanner(project)
     
     override fun getChanges(
         dirtyScope: VcsDirtyScope,
@@ -50,10 +53,29 @@ class JujutsuChangeProvider(
                         builder.processChange(change, vcs.keyInstanceMethod)
                     }
                 }
+            processIgnoredFiles(root, dirtyScope, builder)
         }
     }
 
     override fun isModifiedDocumentTrackingRequired(): Boolean = true
+
+    private fun processIgnoredFiles(
+        root: VirtualFile,
+        dirtyScope: VcsDirtyScope,
+        builder: ChangelistBuilder
+    ) {
+        if (!AdvancedSettings.getBoolean("vcs.process.ignored")) return
+        val ignored = gitIgnoreScanner.listIgnoredPaths(root)
+        if (ignored.isEmpty()) return
+        ignored.forEach { relativePath ->
+            val fullPath = Paths.get(root.path, relativePath).toString()
+            val isDirectory = fullPath.endsWith("/") || java.io.File(fullPath).isDirectory
+            val filePath = VcsUtil.getFilePath(fullPath, isDirectory)
+            if (dirtyScope.belongsTo(filePath)) {
+                builder.processIgnoredFile(filePath)
+            }
+        }
+    }
 
     private fun toChange(root: VirtualFile, entry: JujutsuDiffParser.DiffSummaryEntry): Change? {
         val beforeRevision = entry.beforePath?.let { path ->
