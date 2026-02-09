@@ -12,6 +12,7 @@ import com.intellij.openapi.vcs.changes.CommitContext
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.concurrency.AppExecutorUtil
 import net.chikach.intellijjj.JujutsuVcs
 import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
 
@@ -54,7 +55,7 @@ class JujutsuCheckinEnvironment(
                 errors.add(VcsException(message))
             } else {
                 committedRoots.add(root)
-                VcsDirtyScopeManager.getInstance(project).rootDirty(root)
+                scheduleRootDirty(root)
             }
         }
 
@@ -81,6 +82,15 @@ class JujutsuCheckinEnvironment(
         ApplicationManager.getApplication().invokeLater {
             roots.forEach { root ->
                 project.messageBus.syncPublisher(JujutsuRepositoryChangeListener.TOPIC).repositoryChanged(root)
+            }
+        }
+    }
+
+    private fun scheduleRootDirty(root: VirtualFile) {
+        if (project.isDisposed) return
+        AppExecutorUtil.getAppExecutorService().execute {
+            if (!project.isDisposed) {
+                VcsDirtyScopeManager.getInstance(project).rootDirty(root)
             }
         }
     }

@@ -13,6 +13,7 @@ import com.intellij.openapi.vcs.history.VcsHistoryProvider
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment
 import com.intellij.openapi.vcs.update.UpdateEnvironment
 import com.intellij.util.messages.MessageBusConnection
+import com.intellij.util.concurrency.AppExecutorUtil
 import net.chikach.intellijjj.commit.JujutsuCheckinEnvironment
 import net.chikach.intellijjj.history.JujutsuHistoryProvider
 import net.chikach.intellijjj.jujutsu.JujutsuCommandExecutor
@@ -47,7 +48,12 @@ class JujutsuVcs(project: Project) : AbstractVcs(project, "Jujutsu") {
         repoChangeListenerConnection = project.messageBus.connect().apply {
             subscribe(JujutsuRepositoryChangeListener.TOPIC,
                 JujutsuRepositoryChangeListener {
-                    dirtyScopeManager.rootDirty(it)
+                    if (project.isDisposed) return@JujutsuRepositoryChangeListener
+                    AppExecutorUtil.getAppExecutorService().execute {
+                        if (!project.isDisposed) {
+                            dirtyScopeManager.rootDirty(it)
+                        }
+                    }
                 })
         }
     }

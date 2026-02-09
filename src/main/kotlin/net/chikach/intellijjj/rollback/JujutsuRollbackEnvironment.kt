@@ -12,6 +12,7 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
 import com.intellij.openapi.vcs.rollback.DefaultRollbackEnvironment
 import com.intellij.openapi.vcs.rollback.RollbackProgressListener
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.vcsUtil.VcsUtil
 import net.chikach.intellijjj.JujutsuVcs
 import net.chikach.intellijjj.repo.JujutsuRepositoryChangeListener
@@ -88,7 +89,13 @@ class JujutsuRollbackEnvironment(
     }
 
     private fun markRootChanged(root: VirtualFile) {
-        dirtyScopeManager.rootDirty(root)
+        if (!project.isDisposed) {
+            AppExecutorUtil.getAppExecutorService().execute {
+                if (!project.isDisposed) {
+                    dirtyScopeManager.rootDirty(root)
+                }
+            }
+        }
         ApplicationManager.getApplication().invokeLater {
             if (!project.isDisposed) {
                 project.messageBus.syncPublisher(JujutsuRepositoryChangeListener.TOPIC).repositoryChanged(root)
